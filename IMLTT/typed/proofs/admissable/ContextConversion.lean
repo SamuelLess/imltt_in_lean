@@ -8,11 +8,11 @@ import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.admissable.Substitution
 
-import IMLTT.typed.proofs.admissable.contextconversion.IsCtx
-import IMLTT.typed.proofs.admissable.contextconversion.IsType
-import IMLTT.typed.proofs.admissable.contextconversion.HasType
-import IMLTT.typed.proofs.admissable.contextconversion.IsEqualType
-import IMLTT.typed.proofs.admissable.contextconversion.IsEqualTerm
+import IMLTT.typed.proofs.admissable.ContextConversion.IsCtx
+import IMLTT.typed.proofs.admissable.ContextConversion.IsType
+import IMLTT.typed.proofs.admissable.ContextConversion.HasType
+import IMLTT.typed.proofs.admissable.ContextConversion.IsEqualType
+import IMLTT.typed.proofs.admissable.ContextConversion.IsEqualTerm
 
 import Aesop
 
@@ -362,7 +362,7 @@ theorem context_conversion_type_eq :
     · apply hA'
 
 
-theorem context_conversion_term_eq : 
+theorem context_conversion_term_eq :
     Γ ⊢ A' type → Γ ⊢ A ≡ A' type
     → (Γ ⬝ A ⊢ b ≡ b' ∶ B)
     → (Γ ⬝ A' ⊢ b ≡ b' ∶ B) :=

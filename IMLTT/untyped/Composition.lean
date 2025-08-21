@@ -8,7 +8,6 @@ def comp_weaken (ρ : Weak l m) (ρ' : Weak m n) : Weak l n :=
   | .id => ρ'
   | .shift γ => .shift (comp_weaken γ ρ')
     -- X, Y, Z ⊢ Σv(2);v(1) type → (X, Y, Z) ⬝ B ⊢ ↑Σv(2);v(1) type
-    -- 
   | .lift γ  =>
     match ρ' with
     | .id => .lift γ

@@ -7,7 +7,7 @@ import IMLTT.untyped.proofs.Contexts
 import IMLTT.typed.JudgmentsAndRules
 
 theorem defeq_refl_empty :
-   ∀ (m z : Nat) (Γ : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : 0 = z) (B : Tm m), 
+   ∀ (m z : Nat) (Γ : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : 0 = z) (B : Tm m),
    eqM ▸ ε = Γ ⬝ B ⊗ Δ
    → Γ ⊢ B ≡ B type
  :=
@@ -71,6 +71,3 @@ theorem defeq_refl_extend :
         · apply Δ'
         · rfl
         · rfl
-
-
-

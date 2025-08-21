@@ -14,7 +14,7 @@ theorem test_predicativity_two :
     (ε ⊢ Π(Π𝒰;(Π𝒰;𝟙));𝒰 type) :=
   by
     repeat constructor
- 
+
 theorem test_predicativity_three_test_ :
     (ε ⊢ Π𝒰;𝒰 type) :=
   by
@@ -53,4 +53,3 @@ theorem test_predicativity_five :
     constructor
     · sorry
     · repeat constructor
-

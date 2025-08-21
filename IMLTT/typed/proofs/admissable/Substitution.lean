@@ -7,12 +7,12 @@ import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 import IMLTT.typed.proofs.admissable.Weakening
 
-import IMLTT.typed.proofs.admissable.substitution.Helpers
-import IMLTT.typed.proofs.admissable.substitution.IsCtx
-import IMLTT.typed.proofs.admissable.substitution.IsType
-import IMLTT.typed.proofs.admissable.substitution.HasType
-import IMLTT.typed.proofs.admissable.substitution.IsEqualType
-import IMLTT.typed.proofs.admissable.substitution.IsEqualTerm
+import IMLTT.typed.proofs.admissable.Substitution.Helpers
+import IMLTT.typed.proofs.admissable.Substitution.IsCtx
+import IMLTT.typed.proofs.admissable.Substitution.IsType
+import IMLTT.typed.proofs.admissable.Substitution.HasType
+import IMLTT.typed.proofs.admissable.Substitution.IsEqualType
+import IMLTT.typed.proofs.admissable.Substitution.IsEqualTerm
 
 set_option pp.proofs true
 
@@ -140,7 +140,7 @@ theorem substitution :
         eqM ▸ Γ' = (Γ ⬝ S ⊗ Δ) → eqM ▸ C = A → eqM ▸ C' = A'
         → (Γ ⊢ s ∶ S)
         → (Γ ⊗ ⌈s⌉(Δ w/Nat.le_refl l)) ⊢ (A⌈s/ₙ leq⌉) ≡ (A'⌈s/ₙ leq⌉) type)
-      (motive_5 := fun {n} Γ' c c' C _haaA => 
+      (motive_5 := fun {n} Γ' c c' C _haaA =>
         ∀ m l {leq : l ≤ m} (Γ : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) s S a a' A,
         eqM ▸ Γ' = (Γ ⬝ S ⊗ Δ) → eqM ▸ c = a → eqM ▸ c' = a' → eqM ▸ C = A
         → (Γ ⊢ s ∶ S)
@@ -292,7 +292,7 @@ theorem substitution_general_context {n l : Nat} {Γ : Ctx l} {Δ : CtxGen (l + 
   by
     intro hiC hsS
     apply And.left substitution hiC hsS
- 
+
 theorem substitution_general_type {n l : Nat} {Γ : Ctx l} {Δ : CtxGen (l + 1) (n + 1)} {A : Tm (n + 1)} {s S : Tm l} :
     (Γ ⬝ S ⊗ Δ) ⊢ A type → (Γ ⊢ s ∶ S)
     → (Γ ⊗ ⌈s⌉(Δ w/Nat.le_refl l)) ⊢ A⌈s/ₙ(Nat.le_of_succ_le_succ (gen_ctx_leq Δ))⌉ type :=
@@ -315,7 +315,7 @@ theorem substitution_general_type_eq {n l : Nat} {Γ : Ctx l} {Δ : CtxGen (l + 
   by
     intro hAA hsS
     apply And.left (And.right (And.right (And.right substitution))) hAA hsS
-  
+
 theorem substitution_general_term_eq {n l : Nat} {Γ : Ctx l} {Δ : CtxGen (l + 1) (n + 1)} {A a a' : Tm (n + 1)} {s S : Tm l} :
     ((Γ ⬝ S ⊗ Δ) ⊢ a ≡ a' ∶ A) → (Γ ⊢ s ∶ S)
     → (Γ ⊗ ⌈s⌉(Δ w/Nat.le_refl l)) ⊢ a⌈s/ₙ(Nat.le_of_succ_le_succ (gen_ctx_leq Δ))⌉

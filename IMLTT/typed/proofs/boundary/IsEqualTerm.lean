@@ -384,7 +384,7 @@ theorem boundary_sigma_elim_eq :
     → Γ ⬝ A ⊢ B ≡ B' type
     → (Γ ⊢ p ≡ p' ∶ ΣA;B)
     → (Γ ⬝ ΣA;B) ⊢ C type ∧ (Γ ⬝ ΣA;B) ⊢ C' type
-    → (Γ ⬝ A ⬝ B ⊢ c ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉) 
+    → (Γ ⬝ A ⬝ B ⊢ c ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
       ∧ (Γ ⬝ A ⬝ B ⊢ c' ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉) ∧ Γ ⬝ A ⬝ B ⊢ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉ type
     → Γ ⊢ A type ∧ Γ ⊢ A' type
     → Γ ⬝ A ⊢ B type ∧ Γ ⬝ A ⊢ B' type
@@ -459,7 +459,7 @@ theorem boundary_sigma_elim_eq :
       · apply And.left ihppSi
 
 theorem boundary_nat_zero_intro_eq :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → (Γ ⊢ 𝓏 ∶ 𝒩) ∧ (Γ ⊢ 𝓏 ∶ 𝒩) ∧ Γ ⊢ 𝒩 type :=
@@ -550,7 +550,7 @@ theorem boundary_iden_intro_eq :
     Γ ⊢ A ≡ A' type
     → (Γ ⊢ a ≡ a' ∶ A)
     → Γ ⊢ A type ∧ Γ ⊢ A' type
-    → (Γ ⊢ a ∶ A) ∧ (Γ ⊢ a' ∶ A) ∧ Γ ⊢ A type 
+    → (Γ ⊢ a ∶ A) ∧ (Γ ⊢ a' ∶ A) ∧ Γ ⊢ A type
     → (Γ ⊢ A.refl a ∶ a ≃[A] a) ∧ (Γ ⊢ A'.refl a' ∶ a ≃[A] a) ∧ Γ ⊢ a ≃[A] a type :=
   by
     intro n Γ A A' a a' hAA haaA ihAA ihaaA
@@ -815,7 +815,7 @@ theorem boundary_iden_elim_eq :
               have h2 := functionality_typing_general_type h1
                           (IsEqualTerm.ty_conv_eq (IsEqualTerm.term_symm haaA') (IsEqualType.type_symm hAA))
                           (HasType.ty_conv (And.left (And.right ihaaA')) (IsEqualType.type_symm hAA))
-                          (HasType.ty_conv (And.left ihaaA') (IsEqualType.type_symm hAA)) 
+                          (HasType.ty_conv (And.left ihaaA') (IsEqualType.type_symm hAA))
               have hIdEq : Γ ⊢ a₁ ≃[A] a₃ ≡ a₂ ≃[A] a₄ type :=
                   IsEqualType.iden_form_eq (defeq_refl_type (And.left ihAA))
                       haaA (IsEqualTerm.ty_conv_eq haaA' (IsEqualType.type_symm hAA))
@@ -872,7 +872,7 @@ theorem boundary_iden_elim_eq :
       rw [middle_expand_context] at h
       have h2 := substitution_general_type
                   h (HasType.ty_conv (And.left ihaaA') (IsEqualType.type_symm hAA))
-      have h3 : Γ ⊢ B⌈a₁/ₙ(by omega)⌉⌈a₃/ₙ(by omega)⌉⌈p⌉₀ type := 
+      have h3 : Γ ⊢ B⌈a₁/ₙ(by omega)⌉⌈a₃/ₙ(by omega)⌉⌈p⌉₀ type :=
         by
           apply substitution_type
           rotate_left
@@ -896,7 +896,7 @@ theorem boundary_univ_unit_eq :
     · apply IsType.univ_form hiC
 
 theorem boundary_univ_empty_eq :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → (Γ ⊢ 𝟘 ∶ 𝒰) ∧ (Γ ⊢ 𝟘 ∶ 𝒰) ∧ Γ ⊢ 𝒰 type :=
@@ -951,7 +951,7 @@ theorem boundary_univ_sigma_eq :
     · apply IsType.univ_form (boundary_ctx_term_eq hAAU)
 
 theorem boundary_univ_nat_eq :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → (Γ ⊢ 𝒩 ∶ 𝒰) ∧ (Γ ⊢ 𝒩 ∶ 𝒰) ∧ Γ ⊢ 𝒰 type :=

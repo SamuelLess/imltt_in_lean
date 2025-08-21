@@ -103,13 +103,13 @@ theorem conversion_var_substitute {σ : Subst m n} :
       · apply conversion_var_substitute
         apply conversion_var_lift_n h
       · apply conversion_var_substitute h
-    | .lam A b => 
+    | .lam A b =>
       simp [substitute]
       apply And.intro
       · apply conversion_var_substitute h
       · apply conversion_var_substitute
         apply conversion_var_lift_n h
-    | .app f a => 
+    | .app f a =>
       simp [substitute]
       apply And.intro
       · apply conversion_var_substitute h
@@ -152,7 +152,7 @@ theorem conversion_var_substitute {σ : Subst m n} :
       apply And.intro
       · apply conversion_var_substitute h
       · apply conversion_var_substitute h
-    | .j A B b a a' p => 
+    | .j A B b a a' p =>
       simp [substitute]
       apply And.intro
       · apply conversion_var_substitute h

@@ -38,4 +38,3 @@ theorem helper_weakkening_nat_elim_succ {leq : l ≤ n} :
     A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋⌊↑₁n + 2↬l⌋ = A⌊1ₙ⇑ₚ(↑₁n↬l)⌋⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋ :=
   by
     substitution_norm
-

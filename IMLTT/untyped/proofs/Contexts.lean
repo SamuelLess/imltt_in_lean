@@ -69,10 +69,10 @@ theorem extend_expand_context_n_substitution_simp {Γ : Ctx l} {Δ : CtxGen (l +
     simp []
     induction Δ
     case start =>
-      simp only [expand_ctx]
       rfl
     case expand Δ T =>
-      simp [expand_ctx]
+      simp
+
 
 theorem extend_expand_context_n_substitution {Γ : Ctx l} {Δ : CtxGen (l + 1) (n)} {A : Tm n}:
     (Γ ⊗ ⌈s⌉(Δ w/Nat.le_refl l)) ⬝ (ht_ext_exp_n (neq := gen_ctx_neq Δ) ▸ A)⌈s/ₙ(gen_ctx_leq_sub Δ)⌉ =
@@ -187,7 +187,7 @@ theorem extend_insert_into_context {leq : l ≤ n} {Γ : Ctx n} :
     | succ n' =>
       simp only [insert_into_ctx]
       split
-      · simp [insert_into_ctx]
+      · simp
         apply And.intro
         · apply False.elim
           omega
@@ -260,16 +260,10 @@ theorem head_remove_from_context {eq : l = n} {Γ : Ctx n} :
     remove_from_ctx (l := l) (leq := Nat.le_of_eq eq) (Γ ⬝ A) s = Γ :=
   by
     simp [remove_from_ctx]
-    intro neq
     omega
 
 theorem extend_remove_from_context {leq : l ≤ n} {Γ : Ctx (n + 1)} {s : Tm l}:
     remove_from_ctx (leq := leq) Γ s ⬝ A⌈n_substitution (leq := leq) s⌉ = remove_from_ctx (leq := Nat.le_succ_of_le leq) (Γ ⬝ A) s :=
   by
     simp [remove_from_ctx]
-    split
-    case isTrue hT =>
-      omega
-    case isFalse hF =>
-      rfl
-
+    omega

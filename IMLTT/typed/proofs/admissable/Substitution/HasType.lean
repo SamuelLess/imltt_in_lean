@@ -11,7 +11,7 @@ import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 import IMLTT.typed.proofs.admissable.Weakening
 
-import IMLTT.typed.proofs.admissable.substitution.Helpers
+import IMLTT.typed.proofs.admissable.Substitution.Helpers
 
 theorem substitution_gen_var :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},
@@ -718,7 +718,7 @@ theorem substitution_gen_pi_elim :
       · apply hsS
       · rfl
 
-theorem substitution_gen_sigma_elim : 
+theorem substitution_gen_sigma_elim :
     ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {p : Tm n} {C : Tm (n + 1)} {c : Tm (n + 1 + 1)},
     (Γ ⬝ ΣA;B) ⊢ C type
     → (Γ ⬝ A ⬝ B ⊢ c ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
@@ -849,7 +849,7 @@ theorem substitution_gen_nat_elim :
       rw [←substitution_var_zero]
       rw [substitution_zero_lift]
       repeat' rfl
-      apply hsS
+      exact hsS
     · apply_subst_eq ihsA
       · simp []
         rw [←substitution_nat]
@@ -863,7 +863,7 @@ theorem substitution_gen_nat_elim :
         simp only [lift_n_substitution]
         rfl
       repeat' rfl
-      apply hsS
+      exact hsS
     · rw [←substitution_nat]
       apply ihxNat
       · rfl
@@ -943,40 +943,26 @@ theorem substitution_gen_iden_elim :
       simp only [lift_n_substitution]
       rw [extend_expand_context_n_substitution]
       apply ihB
-      · rfl
-      · rfl
-      · apply hsS
-      · rfl
+      repeat' rfl
+      · exact hsS
     · rw [←substitution_shift_id_lift]
       rw [helper_substitution_iden_B_refl]
       rw [extend_expand_context_n_substitution]
       simp [lift_subst_n]
       rw [lift_n_substitution]
       apply ihbB
-      · rfl
-      · rfl
-      · rfl
-      · apply hsS
-      · rfl
+      repeat' rfl
+      · exact hsS
     · apply ihaA
-      · rfl
-      · rfl
-      · rfl
-      · apply hsS
-      · rfl
+      repeat' rfl
+      · exact hsS
     · apply ihaA'
-      · rfl
-      · rfl
-      · rfl
+      repeat' rfl
       · apply hsS
-      · rfl
     · rw [←substitution_iden]
       apply ihpId
-      · rfl
-      · rfl
-      · rfl
-      · apply hsS
-      · rfl
+      repeat' rfl
+      · exact hsS
 
 theorem substitution_gen_ty_conv :
     ∀ {n : Nat} {Γ : Ctx n} {a A B : Tm n},
@@ -1009,17 +995,10 @@ theorem substitution_gen_ty_conv :
     cases heqΓ
     cases heqt
     cases heqT
-    simp [substitute]
     apply HasType.ty_conv
     · apply ihaA
-      · rfl
-      · rfl
-      · rfl
-      · apply hsS
-      · rfl
+      repeat' rfl
+      · exact hsS
     · apply ihAB
-      · rfl
-      · rfl
-      · rfl
-      · apply hsS
-      · rfl
+      repeat' rfl
+      · exact hsS

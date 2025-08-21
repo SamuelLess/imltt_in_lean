@@ -7,9 +7,9 @@ import IMLTT.untyped.proofs.Contexts
 import IMLTT.typed.JudgmentsAndRules
 import IMLTT.typed.proofs.Recursor
 
-import IMLTT.typed.proofs.admissable.defeqrefl.IsCtx
-import IMLTT.typed.proofs.admissable.defeqrefl.IsType
-import IMLTT.typed.proofs.admissable.defeqrefl.HasType
+import IMLTT.typed.proofs.admissable.DefeqRefl.IsCtx
+import IMLTT.typed.proofs.admissable.DefeqRefl.IsType
+import IMLTT.typed.proofs.admissable.DefeqRefl.HasType
 
 theorem defeq_refl :
     (∀ {n : Nat} {Γ : Ctx n}, Γ ctx → Γ ctx) ∧
@@ -39,7 +39,7 @@ theorem defeq_refl :
             eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ → Γ_1 ⊢ B ≡ B type)
           ∧ ∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (a_1 A_1 : Tm z) (B : Tm m),
             eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ → eqM ▸ a = a_1 → eqM ▸ A = A_1 → Γ_1 ⬝ B ⊗ Δ ⊢ a_1 ≡ a_1 ∶ A_1)
-      ∧ (∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n}, Γ ⊢ A ≡ A' type → Γ ⊢ A ≡ A' type) 
+      ∧ (∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n}, Γ ⊢ A ≡ A' type → Γ ⊢ A ≡ A' type)
       ∧ ∀ {n : Nat} {Γ : Ctx n} {A a a' : Tm n}, (Γ ⊢ a ≡ a' ∶ A) → Γ ⊢ a ≡ a' ∶ A
     by
       any_goals repeat' apply And.intro
@@ -82,7 +82,7 @@ theorem defeq_refl :
         (∀m z (Γ : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) B,
           eqM ▸ Γ' = Γ ⬝ B ⊗ Δ →
           (Γ ⊢ B ≡ B type)))
-      (motive_2 := fun {n} Γ' A' _hA => 
+      (motive_2 := fun {n} Γ' A' _hA =>
         (∀ (eqM : n = 0) A,
           eqM ▸ Γ' = ε → eqM ▸ A' = A →
           (ε ⊢ A ≡ A type)) ∧

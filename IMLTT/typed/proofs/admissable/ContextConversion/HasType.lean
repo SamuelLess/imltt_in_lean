@@ -837,7 +837,6 @@ theorem context_conversion_nat_elim :
     cases heqΓ
     cases heqt
     cases heqT
-    simp [substitution_zero_lift]
     apply HasType.nat_elim
     · rw [extend_expand_context]
       apply ihA

@@ -1092,7 +1092,7 @@ theorem functionality_typing_univ_iden :
         → (Γ_1 ⊢ s ∶ S)
         → (Γ_1 ⊢ s' ∶ S)
         → eqM ▸ Γ = Γ_1 ⬝ S ⊗ Δ ⊙ T ⊗ Ξ
-        → Γ_1 ⊗ ⌈s⌉(Δ w/Nat.le_refl l) ⊢ T⌈s/ₙleq⌉ ≡ T⌈s'/ₙleq⌉ type) 
+        → Γ_1 ⊗ ⌈s⌉(Δ w/Nat.le_refl l) ⊢ T⌈s/ₙleq⌉ ≡ T⌈s'/ₙleq⌉ type)
     ∧ ∀ (m l : Nat) {leq : l ≤ m} (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (s s' S : Tm l)
           (t T : Tm (m + 1)) (eqM : n = m + 1),
         (Γ_1 ⊢ s ≡ s' ∶ S)
@@ -1957,13 +1957,10 @@ theorem functionality_typing_ty_conv :
       cases heqΓ
       cases heqt
       cases heqT
-      simp [substitute]
       apply IsEqualTerm.ty_conv_eq
       · apply And.right ihaA
-        · apply hssS
-        · apply hsS
-        · apply hsS'
+        · exact hssS
+        · exact hsS
+        · exact hsS'
         repeat' rfl
-      · apply And.left (And.right (And.right (And.right substitution)))
-        · apply hAB
-        · apply hsS
+      · exact substitution_general_type_eq hAB hsS

@@ -37,7 +37,7 @@ import IMLTT.typed.JudgmentsAndRules
 --         · apply hB
 --         · have h := ihvA A' B'
 --           sorry
---         
+--
 --       · sorry
 --     any_goals aesop?
 
@@ -68,12 +68,12 @@ theorem pi_has_type_inversion :
       · rfl
     any_goals aesop
 
-theorem pi_is_type_inversion : 
+theorem pi_is_type_inversion :
     Γ ⊢ ΠA;B type → Γ ⊢ A type ∧ Γ ⬝ A ⊢ B type :=
   by
     intro hPi
     match hPi with
-    | .pi_form hA hB => 
+    | .pi_form hA hB =>
       apply And.intro hA hB
     | .univ_elim hPiU =>
       have hAUBU := pi_has_type_inversion hPiU
@@ -105,7 +105,7 @@ theorem sigma_has_type_inversion :
       · apply hB
     any_goals aesop
 
-theorem sigma_is_type_inversion : 
+theorem sigma_is_type_inversion :
     Γ ⊢ ΣA;B type → Γ ⊢ A type ∧ Γ ⬝ A ⊢ B type :=
   by
     intro hSi
@@ -157,6 +157,6 @@ theorem iden_is_type_inversion :
     intro hId
     match hId with
     | .iden_form hA haA haA' => apply And.intro hA (And.intro haA haA')
-    | .univ_elim hIdU => 
+    | .univ_elim hIdU =>
       have h1 := iden_has_type_inversion hIdU
       apply And.intro (IsType.univ_elim (And.left h1)) (And.right h1)

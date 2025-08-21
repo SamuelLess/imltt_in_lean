@@ -10,7 +10,7 @@ import IMLTT.typed.proofs.admissable.Substitution
 
 
 theorem context_conversion_empty :
-    ∀ (m l : Nat) (Γ : Ctx l) (Δ : CtxGen (l + 1) m) (eqM : 0 = m) {S S' : Tm l}, 
+    ∀ (m l : Nat) (Γ : Ctx l) (Δ : CtxGen (l + 1) m) (eqM : 0 = m) {S S' : Tm l},
     Γ ⊢ S ≡ S' type
     → Γ ⊢ S type
     → Γ ⊢ S' type

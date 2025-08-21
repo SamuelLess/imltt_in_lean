@@ -263,7 +263,7 @@ theorem weakening_id :
       apply And.intro
       · apply weakening_id
       · apply weakening_id
-    | .pairSigma a b => 
+    | .pairSigma a b =>
       simp [weaken]
       apply And.intro
       · apply weakening_id
@@ -311,7 +311,7 @@ theorem weakening_id :
         intro i
         apply weakening_var_lift_n_id
       · apply weakening_id
-    | .refl A a => 
+    | .refl A a =>
       simp [weaken]
       apply And.intro
       · apply weakening_id
@@ -340,7 +340,7 @@ theorem weakening_id :
               · apply weakening_id
 
 @[simp]
-theorem weakening_lift_id {t : Tm (n + 1)} : 
+theorem weakening_lift_id {t : Tm (n + 1)} :
     t⌊⇑ₚidₚ⌋ = t :=
   by
     have h :=  weakening_id (t := t)
@@ -417,12 +417,7 @@ theorem lift_weaken_from {n : Nat} {leq : l ≤ n} :
     ⇑ₚweaken_from n l = weaken_from (n + 1) l :=
   by
     simp [weaken_from]
-    split
-    case isTrue h =>
-      rfl
-    case isFalse h =>
-      apply False.elim
-      omega
+    omega
 
 @[simp]
 theorem lift_weaken_from_simp {n : Nat} {leq : l ≤ n} :

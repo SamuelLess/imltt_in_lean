@@ -55,7 +55,7 @@ theorem weakening_comp {ρ : Weak l m} {ρ' : Weak m n} {t : Tm n} :
       · apply weakening_comp
     | .nat =>
       rfl
-    | .iden A a a' => 
+    | .iden A a a' =>
       simp [weaken]
       apply And.intro
       · apply weakening_comp
@@ -180,7 +180,7 @@ theorem substitution_lift_n_comp_ρσ (l : Nat) {t : Tm (n + l)} :
     t⌈l ₙ⇑ₚρ ₚ∘ₛl ₙ⇑ₛσ⌉ = t⌈l ₙ⇑ₛ(ρ ₚ∘ₛσ)⌉ :=
   by
     match l with
-    | 0 => 
+    | 0 =>
       simp []
     | l' + 1 =>
       rw [lift_subst_n]
@@ -204,15 +204,12 @@ mutual
           simp []
         | extend σ' s =>
           rw [comp_weaken_substitute]
-          simp [←substitution_var_conv_shift_id]
+          simp only [substitute_var]
           cases x with
           | mk i hFin =>
             cases i with
-            | zero =>
-              simp [weakening_comp]
-            | succ i' =>
-              simp []
-              apply substitution_var_comp_ρσ
+            | zero => rfl
+            | succ i' => apply substitution_var_comp_ρσ
       | shift ρ' ih =>
         cases σ with
         | weak ξ =>
@@ -222,7 +219,7 @@ mutual
         | lift σ' =>
           simp []
         | extend σ' s =>
-          simp [←substitution_var_conv_shift_id]
+          simp only [substitute_var, shift_tm, comp_weaken_substitute]
           cases x with
           | mk i hFin =>
             cases i with
@@ -231,7 +228,7 @@ mutual
             | succ i' =>
               simp []
               rw (config := {occs := .pos [2]}) [←substitution_var_shift_comp_ρσ]
-              simp [←substitution_var_conv_shift_id]
+              rfl
       | lift ρ' ih =>
         cases σ with
         | weak ξ =>
@@ -241,7 +238,7 @@ mutual
         | lift σ' =>
           simp []
         | extend σ' s =>
-          simp [←substitution_var_conv_shift_id]
+          simp only [substitute_var, shift_tm, comp_weaken_substitute]
           cases x with
           | mk i hFin =>
             cases i with
@@ -250,7 +247,7 @@ mutual
             | succ i' =>
               simp []
               rw [←substitution_var_shift_comp_ρσ]
-              simp [←substitution_var_conv_shift_id]
+              simp only [substitute_var, shift_tm]
 
   theorem substitution_var_comp_ρσ {ρ : Weak l m} {σ : Subst m n} {x : Fin n} :
       x⌈σ⌉ᵥ⌊ρ⌋ = x⌈ρ ₚ∘ₛσ⌉ᵥ :=
@@ -268,23 +265,17 @@ mutual
         | lift σ' =>
           rw [comp_weaken_substitute]
           rw (config := {occs := .pos [1]}) [substitute_var]
-          rw [←ih]
-          rw [shift_tm]
-          rw [weakening_comp]
-          rw [comp_weaken]
-          rw [comp_weaken]
+          rw [←ih, shift_tm, weakening_comp, comp_weaken, comp_weaken]
         | extend σ' s =>
-          rw [←weakening_shift_id]
-          rw [ih]
-          simp []
+          rw [←weakening_shift_id, ih]
+          simp only [comp_weaken_substitute, substitute_var]
           rw [substitution_var_conv_shift_id]
           simp only [substitute_var]
           cases x with
           | mk i hFin =>
             cases i with
             | zero =>
-              simp only [←ih]
-              simp []
+              simp only [←ih, shift_tm, substitute_var, weakening_shift_id]
             | succ i' =>
               simp [←substitution_var_shift_comp_ρσ, ←ih, ←substitution_var_comp_ρσ]
       | lift ρ' ih =>
@@ -300,8 +291,7 @@ mutual
           simp only [shift_tm]
           simp only [weakening_shift_id_lift]
           rw [←weakening_shift_id]
-          simp [substitute] at ih
-          simp [ih]
+          exact congrArg (weaken (↑ₚidₚ)) ih
         | lift σ' =>
           cases x with
           | mk i hFin =>
@@ -310,30 +300,21 @@ mutual
               simp [comp_weaken_substitute]
               rfl
             | succ i' =>
-              simp only [comp_weaken_substitute]
-              simp only [substitute_var]
-              simp only [shift_tm]
-              simp only [weakening_comp]
-              simp only [comp_weaken]
+              simp only [comp_weaken_substitute, substitute_var,
+                  shift_tm, weakening_comp, comp_weaken]
               rw [←weakening_shift_id]
-              simp only [←weakening_comp]
-              simp only [weakening_id]
-              simp only [←substitution_conv_var]
-              rw [substitute]
-              rw [substitution_var_comp_ρσ]
+              simp only [←weakening_comp, weakening_id, ←substitution_conv_var]
+              rw [substitute, substitution_var_comp_ρσ]
               rfl
         | extend σ' s =>
           cases x with
           | mk i hFin =>
             cases i with
             | zero =>
-              simp only [comp_weaken_substitute]
-              simp only [substitute_var]
+              simp only [comp_weaken_substitute, substitute_var]
             | succ i' =>
-              simp only [comp_weaken_substitute]
-              simp only [substitute_var]
-              simp only [←substitution_conv_var]
-              simp_all
+              simp only [comp_weaken_substitute, substitute_var, ←substitution_conv_var]
+              simp_all only [substitute, substitute_var]
               simp only [substitution_var_comp_ρσ]
 end
 
@@ -474,7 +455,7 @@ theorem substitution_var_lift_n_comp_σρ {l : Nat} {x : Fin (n + l + 1)} :
       match x with
       | .mk i hFin =>
         match i with
-        | .zero => 
+        | .zero =>
           rfl
         | .succ i' =>
           simp []
@@ -715,7 +696,7 @@ theorem substitution_var_lift_n_comp :
     v(x)⌈⇑ₛ n ₙ⇑ₛσ ₛ∘ₛ ⇑ₛ n ₙ⇑ₛσ'⌉ = v(x)⌈⇑ₛn ₙ⇑ₛ(σ ₛ∘ₛσ')⌉ :=
   by
     cases n with
-    | zero => 
+    | zero =>
       simp [lift_subst_n]
     | succ n' =>
       cases x with

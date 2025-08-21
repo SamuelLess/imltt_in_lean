@@ -12,7 +12,7 @@ import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.admissable.DefeqRefl
 
-import IMLTT.typed.proofs.admissable.substitution.Helpers
+import IMLTT.typed.proofs.admissable.Substitution.Helpers
 
 theorem substitution_gen_var_eq :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},
@@ -660,7 +660,7 @@ theorem substitution_gen_unit_elim_eq :
       repeat' rfl
       apply hsS
 
-theorem substitution_gen_empty_elim_eq : 
+theorem substitution_gen_empty_elim_eq :
     ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm (n + 1)} {b b' : Tm n},
     Γ ⬝ 𝟘 ⊢ A ≡ A' type
     → (Γ ⊢ b ≡ b' ∶ 𝟘)
@@ -760,7 +760,7 @@ theorem substitution_gen_pi_intro_eq :
       · apply hsS
       · rfl
 
-theorem substitution_gen_pi_elim_eq : 
+theorem substitution_gen_pi_elim_eq :
     ∀ {n : Nat} {Γ : Ctx n} {f f' A : Tm n} {B : Tm (n + 1)} {a a' : Tm n},
     (Γ ⊢ f ≡ f' ∶ ΠA;B)
     → (Γ ⊢ a ≡ a' ∶ A)
@@ -871,7 +871,7 @@ theorem substitution_gen_sigma_intro_eq :
       repeat' rfl
       apply hsS
 
-theorem substitution_gen_sigma_elim_eq : 
+theorem substitution_gen_sigma_elim_eq :
     ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {A' : Tm n} {B' : Tm (n + 1)} {p p' : Tm n} {C C' : Tm (n + 1)}
       {c c' : Tm (n + 1 + 1)},
     (Γ ⬝ ΣA;B) ⊢ C ≡ C' type
@@ -987,7 +987,7 @@ theorem substitution_gen_sigma_elim_eq :
 theorem substitution_gen_nat_zero_intro_eq :
     ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
-    → (∀ (m l : Nat) (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) (s S : Tm l), 
+    → (∀ (m l : Nat) (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) (s S : Tm l),
       eqM ▸ Γ = Γ_1 ⬝ S ⊗ Δ
       → (Γ_1 ⊢ s ∶ S)
       → Γ_1 ⊗ ⌈s⌉(Δ w/Nat.le_refl l) ctx)
@@ -1146,7 +1146,7 @@ theorem substitution_gen_nat_elim_eq :
       · apply hsS
       · rfl
 
-theorem substitution_gen_iden_intro_eq : 
+theorem substitution_gen_iden_intro_eq :
     ∀ {n : Nat} {Γ : Ctx n} {A A' a a' : Tm n},
     Γ ⊢ A ≡ A' type
     → (Γ ⊢ a ≡ a' ∶ A)
@@ -1356,7 +1356,7 @@ theorem substitution_gen_univ_unit_eq :
     · apply hsS
     · rfl
 
-theorem substitution_gen_univ_empty_eq : 
+theorem substitution_gen_univ_empty_eq :
     ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → (∀ (m l : Nat) (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) (s S : Tm l),
@@ -1384,7 +1384,7 @@ theorem substitution_gen_univ_empty_eq :
     · apply hsS
     · rfl
 
-theorem substitution_gen_univ_pi_eq : 
+theorem substitution_gen_univ_pi_eq :
     ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n} {B B' : Tm (n + 1)},
     (Γ ⊢ A ≡ A' ∶ 𝒰)
     → (Γ ⬝ A ⊢ B ≡ B' ∶ 𝒰)
@@ -1440,7 +1440,7 @@ theorem substitution_gen_univ_pi_eq :
       · apply hsS
       · rfl
 
-theorem substitution_gen_univ_sigma_eq : 
+theorem substitution_gen_univ_sigma_eq :
     ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n} {B B' : Tm (n + 1)},
     (Γ ⊢ A ≡ A' ∶ 𝒰)
     → (Γ ⬝ A ⊢ B ≡ B' ∶ 𝒰)
@@ -1594,7 +1594,7 @@ theorem substitution_gen_univ_iden_eq :
       · apply hsS
       · rfl
 
-theorem substitution_gen_ty_conv_eq : 
+theorem substitution_gen_ty_conv_eq :
     ∀ {n : Nat} {Γ : Ctx n} {a b A B : Tm n},
     (Γ ⊢ a ≡ b ∶ A)
     → Γ ⊢ A ≡ B type
@@ -1628,7 +1628,6 @@ theorem substitution_gen_ty_conv_eq :
     cases heqt
     cases heqt'
     cases heqT
-    simp [substitute]
     apply IsEqualTerm.ty_conv_eq
     · apply ihabA
       · rfl
@@ -1679,7 +1678,7 @@ theorem substitution_gen_term_symm :
     · apply hsS
     · rfl
 
-theorem substitution_gen_term_trans : 
+theorem substitution_gen_term_trans :
     ∀ {n : Nat} {Γ : Ctx n} {T a b c : Tm n},
     (Γ ⊢ a ≡ b ∶ T)
     → (Γ ⊢ b ≡ c ∶ T)

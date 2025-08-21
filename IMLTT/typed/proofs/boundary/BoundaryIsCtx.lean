@@ -22,7 +22,7 @@ theorem ctx_decr_eq :
     apply Iff.intro
     · intro hiCeq
       cases hiCeq with
-      | refl => 
+      | refl =>
         apply And.intro
         · rfl
         · rfl
@@ -53,14 +53,14 @@ theorem boundary_ctx :
       (motive_4 := fun Γ _A _A' _hAA => Γ ctx)
       (motive_5 := fun Γ _a _a' _A _haaA => Γ ctx)
     case HasTypePiIntro =>
-      intro n Γ A b B _ hiCA 
+      intro n Γ A b B _ hiCA
       apply ctx_decr hiCA
     case IsEqualTermPiIntroEq =>
       intro n Γ A b b' B _ _ _ hiCA _
       apply ctx_decr hiCA
     all_goals aesop
 
-theorem boundary_ctx_type : ∀ {n : Nat} {Γ : Ctx n} {A : Tm n}, 
+theorem boundary_ctx_type : ∀ {n : Nat} {Γ : Ctx n} {A : Tm n},
     Γ ⊢ A type → Γ ctx :=
   by
     intro n Γ A
@@ -72,13 +72,13 @@ theorem boundary_ctx_term : ∀ {n : Nat} {Γ : Ctx n} {A a : Tm n},
     intro n Γ A a
     apply (And.left (And.right (And.right boundary_ctx)))
 
-theorem boundary_ctx_type_eq : ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n}, 
+theorem boundary_ctx_type_eq : ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n},
     Γ ⊢ A ≡ A' type → Γ ctx :=
   by
     intro n Γ A A'
     apply (And.left (And.right (And.right (And.right boundary_ctx))))
 
-theorem boundary_ctx_term_eq : ∀ {n : Nat} {Γ : Ctx n} {A a a' : Tm n}, 
+theorem boundary_ctx_term_eq : ∀ {n : Nat} {Γ : Ctx n} {A a a' : Tm n},
     (Γ ⊢ a ≡ a' ∶ A) → Γ ctx :=
   by
     intro n Γ A a a'

@@ -14,7 +14,7 @@ import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
 theorem pi_same_type_diff_var_context_iden_weak :
     (Γ ⬝ A ⊢ P type)
-    → (Γ ⬝ A ⬝ A⌊↑ₚidₚ⌋ ⬝ v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0)) 
+    → (Γ ⬝ A ⬝ A⌊↑ₚidₚ⌋ ⬝ v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0))
               ⊢ (Π(P⌊↑ₚidₚ⌋);(P⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(0)⌉⌊↑ₚidₚ⌋))⌊↑ₚidₚ⌋ type :=
   by
     intro hP

@@ -34,7 +34,7 @@ theorem boundary_weak :
     · apply ihB
 
 theorem boundary_unit_intro :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → Γ ⊢ 𝟙 type :=
@@ -43,7 +43,7 @@ theorem boundary_unit_intro :
     apply IsType.unit_form hiC
 
 theorem boundary_pi_intro :
-    ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {b B : Tm (n + 1)}, 
+    ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {b B : Tm (n + 1)},
     (Γ ⬝ A ⊢ b ∶ B)
     → Γ ⬝ A ⊢ B type
     → Γ ⊢ ΠA;B type :=
@@ -102,7 +102,7 @@ theorem boundary_iden_intro :
     · apply haA
 
 theorem boundary_univ_unit :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → Γ ⊢ 𝒰 type :=
@@ -142,7 +142,7 @@ theorem boundary_univ_sigma :
     apply ihAU
 
 theorem boundary_univ_nat :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → Γ ⊢ 𝒰 type :=
@@ -252,7 +252,7 @@ theorem boundary_iden_elim :
     have h1 := substitution_general_type hB haA
     simp only [substitute_into_gen_ctx] at h1
     rw [middle_expand_context] at h1
-    have h2 : Γ ⊗ ⌈a'⌉(.start ⊙ (v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0))⌈a/ₙ(by omega)⌉ w/ (by omega)) 
+    have h2 : Γ ⊗ ⌈a'⌉(.start ⊙ (v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0))⌈a/ₙ(by omega)⌉ w/ (by omega))
               ⊢ B⌈a/ₙ(by omega)⌉⌈a'/ₙ(by omega)⌉ type :=
       by
         apply substitution_general_type

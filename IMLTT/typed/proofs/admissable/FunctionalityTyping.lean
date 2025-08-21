@@ -43,7 +43,7 @@ theorem functionality_typing :
     suffices h :
       (∀ {n : Nat} {Γ : Ctx n},
         Γ ctx
-        → ∀ (m l k : Nat) {leq : l ≤ m} 
+        → ∀ (m l k : Nat) {leq : l ≤ m}
           (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (Ξ : CtxGen (m + 2) (k + 1))
           (eqM : n = k + 1) (s s' S : Tm l) (T : Tm (m + 1)),
           (Γ_1 ⊢ s ≡ s' ∶ S)

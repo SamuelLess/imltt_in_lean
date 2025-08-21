@@ -74,13 +74,13 @@ theorem substitution_var_substitute {σ σ' : Subst m n} :
       · apply substitution_var_substitute
         apply substitution_var_lift h
       · apply substitution_var_substitute h
-    | .lam A b => 
+    | .lam A b =>
       simp []
       apply And.intro
       · apply substitution_var_substitute h
       · apply substitution_var_substitute
         apply substitution_var_lift h
-    | .app f a => 
+    | .app f a =>
       simp []
       apply And.intro
       · apply substitution_var_substitute h
@@ -338,39 +338,39 @@ theorem substitution_lift_id {t : Tm (n + 1)} :
     rw [←substitution_var_lift_id]
     apply substitution_conv_lift_id
 
-theorem substitution_univ : 𝒰⌈σ⌉ = 𝒰 := 
+theorem substitution_univ : 𝒰⌈σ⌉ = 𝒰 :=
   by
     simp [substitute]
 
-theorem substitution_unit : 𝟙⌈σ⌉ = 𝟙 := 
+theorem substitution_unit : 𝟙⌈σ⌉ = 𝟙 :=
   by
     simp [substitute]
 
-theorem substitution_empty : 𝟘⌈σ⌉ = 𝟘 := 
+theorem substitution_empty : 𝟘⌈σ⌉ = 𝟘 :=
   by
     simp [substitute]
 
-theorem substitution_tt : ⋆⌈σ⌉ = ⋆ := 
+theorem substitution_tt : ⋆⌈σ⌉ = ⋆ :=
   by
     simp [substitute]
 
-theorem substitution_pi : (ΠA;B)⌈σ⌉ = ΠA⌈σ⌉;B⌈⇑ₛσ⌉ := 
+theorem substitution_pi : (ΠA;B)⌈σ⌉ = ΠA⌈σ⌉;B⌈⇑ₛσ⌉ :=
   by
     simp [substitute]
 
-theorem substitution_lambda : (λA;b)⌈σ⌉ = λA⌈σ⌉;b⌈⇑ₛσ⌉ := 
+theorem substitution_lambda : (λA;b)⌈σ⌉ = λA⌈σ⌉;b⌈⇑ₛσ⌉ :=
   by
     simp [substitute]
 
-theorem substitution_sigma : (ΣA;B)⌈σ⌉ = ΣA⌈σ⌉;B⌈⇑ₛσ⌉ := 
-  by
-    simp [substitute]
- 
-theorem substitution_pair : (a&b)⌈σ⌉ = (a⌈σ⌉)&(b⌈σ⌉) := 
+theorem substitution_sigma : (ΣA;B)⌈σ⌉ = ΣA⌈σ⌉;B⌈⇑ₛσ⌉ :=
   by
     simp [substitute]
 
-theorem substitution_nat : 𝒩 ⌈σ⌉ = 𝒩  := 
+theorem substitution_pair : (a&b)⌈σ⌉ = (a⌈σ⌉)&(b⌈σ⌉) :=
+  by
+    simp [substitute]
+
+theorem substitution_nat : 𝒩 ⌈σ⌉ = 𝒩  :=
   by
     simp [substitute]
 
@@ -378,11 +378,11 @@ theorem substitution_iden : (a ≃[A] a')⌈σ⌉ = a⌈σ⌉ ≃[A⌈σ⌉] a'�
   by
     simp [substitute]
 
-theorem substitution_var_zero : 𝓏⌈σ⌉ = 𝓏 := 
+theorem substitution_var_zero : 𝓏⌈σ⌉ = 𝓏 :=
   by
     simp [substitute]
 
-theorem substitution_succ : 𝓈(x)⌈σ⌉ = 𝓈(x⌈σ⌉) := 
+theorem substitution_succ : 𝓈(x)⌈σ⌉ = 𝓈(x⌈σ⌉) :=
   by
     simp [substitute]
 
@@ -394,12 +394,7 @@ theorem lift_n_substitution {n : Nat} {leq : l ≤ n} {s : Tm l} :
     ⇑ₛ(s/ₙleq) = s/ₙ(Nat.le_step leq) :=
   by
     simp [n_substitution]
-    split
-    case isTrue h =>
-      rfl
-    case isFalse h =>
-      apply False.elim
-      omega
+    omega
 
 @[simp]
 theorem n_substitution_zero {n : Nat} {s : Tm n}:
@@ -433,12 +428,7 @@ theorem lift_n_substitution_shift {n : Nat} {leq : l ≤ n} {s : Tm l} :
     ⇑ₛ(s↑/ₙleq) = s↑/ₙ(Nat.le_step leq) :=
   by
     simp [n_substitution_shift]
-    split
-    case isTrue h =>
-      rfl
-    case isFalse h =>
-      apply False.elim
-      omega
+    omega
 
 @[simp]
 theorem n_substitution_shift_zero {n : Nat} {s : Tm (n + 1)} :

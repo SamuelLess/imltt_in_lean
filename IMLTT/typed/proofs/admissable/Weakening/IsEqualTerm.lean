@@ -11,7 +11,7 @@ import IMLTT.typed.RulesEquality
 import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 
-import IMLTT.typed.proofs.admissable.weakening.Helpers
+import IMLTT.typed.proofs.admissable.Weakening.Helpers
 
 theorem weakening_var_eq :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},
@@ -304,24 +304,30 @@ theorem weakening_nat_zero_comp :
       rw [←weakening_nat_zero, substitution_zero_weak_simp]
       apply hS
       repeat' rfl
-    · apply_subst_eq ihsA
+    · apply replaceWithEq
+      rotate_right
+      apply_replace_meta ihsA
+      rotate_right 2
+      congr 1
+      try any_goals apply ihsA
       · simp []
         rw [←weakening_nat]
         rw (config := {occs := .pos [2]}) [extend_expand_context_weaken_from]
         rw [lift_weaken_from]
         rw (config := {occs := .pos [2]}) [extend_expand_context_weaken_from]
         context_info_nat_relations
-        omega
+        assumption
       · substitution_norm
       · rw [helper_weakkening_nat_elim_succ]
-        apply gen_ctx_leq Δ
-      apply hS
+        exact gen_ctx_leq Δ
+      exact hS
       repeat' rfl
     · rw [←weakening_nat]
       rw [←weakening_nat_zero]
       apply ihzNat
       apply hS
       repeat' rfl
+
 
 theorem weakening_nat_succ_comp :
     ∀ {n : Nat} {Γ : Ctx n} {z x : Tm n} {A : Tm (n + 1)} {s : Tm (n + 2)},
@@ -378,22 +384,27 @@ theorem weakening_nat_succ_comp :
       rw [←weakening_nat_zero, substitution_zero_weak_simp]
       apply hS
       repeat' rfl
-    · apply_subst_eq ihsA
+    · apply replaceWithEq
+      rotate_right
+      apply_replace_meta ihsA
+      rotate_right 2
+      congr 1
+      try any_goals apply ihsA
       · simp []
         rw [←weakening_nat]
         rw (config := {occs := .pos [2]}) [extend_expand_context_weaken_from]
         rw [lift_weaken_from]
         rw (config := {occs := .pos [2]}) [extend_expand_context_weaken_from]
         context_info_nat_relations
-        omega
+        assumption
       · substitution_norm
       · rw [helper_weakkening_nat_elim_succ]
-        apply gen_ctx_leq Δ
-      apply hS
+        exact gen_ctx_leq Δ
+      exact hS
       repeat' rfl
     · rw [←weakening_nat]
       apply ihxNat
-      apply hS
+      exact hS
       repeat' rfl
 
 theorem weakening_iden_comp :
@@ -473,7 +484,7 @@ theorem weakening_unit_intro_eq :
     cases heqT
     apply IsEqualTerm.unit_intro_eq
     apply ihiC
-    apply hS
+    · exact hS
     repeat' rfl
 
 theorem weakening_unit_elim_eq :
@@ -518,8 +529,7 @@ theorem weakening_unit_elim_eq :
     rw [substitution_zero_weak]
     apply IsEqualTerm.unit_elim_eq
     · apply_subst_eq ihAA
-      rw [←weakening_unit]
-      rw [←extend_expand_context_weaken_from]
+      rw [←weakening_unit, ←extend_expand_context_weaken_from]
       apply hS
       repeat' rfl
     · apply_subst_eq ihaaA
@@ -712,7 +722,7 @@ theorem weakening_sigma_intro_eq :
       repeat' rfl
 
 theorem weakening_sigma_elim_eq :
-    ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {A' : Tm n} {B' : Tm (n + 1)} {p p' : Tm n} 
+    ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {A' : Tm n} {B' : Tm (n + 1)} {p p' : Tm n}
     {C C' : Tm (n + 1)} {c c' : Tm (n + 1 + 1)},
     (Γ ⬝ ΣA;B) ⊢ C ≡ C' type
     → (Γ ⬝ A ⬝ B ⊢ c ≡ c' ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
@@ -918,14 +928,12 @@ theorem weakening_nat_elim_eq :
     · apply use_equality_term_eq
       apply ihzzA
       apply hS
-      simp only [extend_expand_context]
       any_goals substitution_step_meta
       any_goals substitution_norm
     · apply use_equality_term_eq
       apply ihssA
       apply hS
       simp only [extend_expand_context]
-      any_goals substitution_step_meta
       any_goals substitution_step_meta
       substitution_norm
     · rw [←weakening_nat]

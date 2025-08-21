@@ -21,7 +21,7 @@ theorem boundary_unit_form_eq :
     · apply IsType.unit_form hiC
 
 theorem boundary_empty_form_eq :
-    ∀ {n : Nat} {Γ : Ctx n}, 
+    ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → Γ ctx
     → Γ ⊢ 𝟘 type ∧ Γ ⊢ 𝟘 type :=
@@ -126,7 +126,7 @@ theorem boundary_univ_elim_eq :
     · apply IsType.univ_elim (And.left (And.right ihAAU))
 
 theorem boundary_type_symm :
-    ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n}, 
+    ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n},
     Γ ⊢ A ≡ A' type
     → Γ ⊢ A type ∧ Γ ⊢ A' type
     → Γ ⊢ A' type ∧ Γ ⊢ A type :=
