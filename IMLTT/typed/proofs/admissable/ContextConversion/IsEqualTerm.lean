@@ -1171,7 +1171,7 @@ theorem context_conversion_iden_elim_eq :
     → eqM ▸ B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉ = A_1
     → Γ_1 ⬝ S' ⊗ Δ ⊢ a ≡ a' ∶ A_1:=
   by
-    intro n Γ' A B B' b b' a₁ a₃ A' a₂ a₄ p p' hBB hbbB hAA haaA haaA' hppId ihBB ihbbB ihAA ihaaA ihaaA' ihppId 
+    intro n Γ' A B B' b b' a₁ a₃ A' a₂ a₄ p p' hBB hbbB hAA haaA haaA' hppId ihBB ihbbB ihAA ihaaA ihaaA' ihppId
     intro m l Γ Δ heqM S S' t t' T hSS hS hS' heqΓ heqt heqt' heqT
     cases heqM
     cases heqΓ
@@ -1458,7 +1458,7 @@ theorem context_conversion_univ_iden_eq :
     cases heqt
     cases heqt'
     cases heqT
-    apply IsEqualTerm.univ_iden_eq 
+    apply IsEqualTerm.univ_iden_eq
     · apply ihAAU
       · apply hSS
       · apply hS
@@ -1608,4 +1608,3 @@ theorem context_conversion_term_trans :
       · apply hS
       · apply hS'
       repeat' rfl
-

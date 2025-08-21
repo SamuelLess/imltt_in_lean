@@ -1628,7 +1628,6 @@ theorem substitution_gen_ty_conv_eq :
     cases heqt
     cases heqt'
     cases heqT
-    simp [substitute]
     apply IsEqualTerm.ty_conv_eq
     · apply ihabA
       · rfl

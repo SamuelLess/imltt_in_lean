@@ -9,10 +9,10 @@ package «iMLTT» where
   -- add any additional package configuration options here
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git" @"v4.17.0"
+  "https://github.com/leanprover-community/mathlib4.git" @"v4.22.0"
 
 require aesop from git
-  "https://github.com/leanprover-community/aesop" @"v4.17.0"
+  "https://github.com/leanprover-community/aesop" @"v4.22.0"
 
 @[default_target]
 lean_lib «IMLTT» where

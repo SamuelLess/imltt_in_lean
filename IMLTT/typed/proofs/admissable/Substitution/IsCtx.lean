@@ -5,8 +5,8 @@ import IMLTT.untyped.proofs.Contexts
 
 import IMLTT.typed.JudgmentsAndRules
 
-theorem substititution_gen_ctx_empty (m l : Nat) (Γ : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) 
-    (eqM : 0 = m + 1) (s S : Tm l) : 
+theorem substititution_gen_ctx_empty (m l : Nat) (Γ : Ctx l) (Δ : CtxGen (l + 1) (m + 1))
+    (eqM : 0 = m + 1) (s S : Tm l) :
     eqM ▸ ε = Γ ⬝ S ⊗ Δ
     → (Γ ⊢ s ∶ S)
     → (Γ ⊗ ⌈s⌉(Δ w/Nat.le_refl l)) ctx :=

@@ -261,7 +261,7 @@ mutual
       IsEqualTerm Γ A A' 𝒰 → IsEqualTerm (Γ ⬝ A) B B' 𝒰
       → IsEqualTerm Γ (ΠA;B) (ΠA';B') 𝒰
     | univ_sigma_eq :
-      IsEqualTerm Γ A A' 𝒰 → IsEqualTerm (Γ ⬝ A) B B' 𝒰 
+      IsEqualTerm Γ A A' 𝒰 → IsEqualTerm (Γ ⬝ A) B B' 𝒰
       → IsEqualTerm Γ (ΣA;B) (ΣA';B') 𝒰
     | univ_nat_eq :
       IsCtx Γ

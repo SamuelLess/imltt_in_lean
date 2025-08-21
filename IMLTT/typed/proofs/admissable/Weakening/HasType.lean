@@ -709,7 +709,6 @@ theorem weakening_nat_elim :
     · apply use_equality_term
       apply ihzA
       apply hS
-      simp only [extend_expand_context]
       any_goals substitution_step_meta
       any_goals substitution_norm
     · apply use_equality_term

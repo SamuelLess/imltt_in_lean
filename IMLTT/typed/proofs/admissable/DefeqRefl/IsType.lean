@@ -12,12 +12,12 @@ theorem defeq_refl_unit_form :
     → (∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (B : Tm m),
       eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ
       → Γ_1 ⊢ B ≡ B type)
-    → (∀ (eqM : n = 0) (A : Tm 0), 
+    → (∀ (eqM : n = 0) (A : Tm 0),
         eqM ▸ Γ = ε
         → eqM ▸ 𝟙 = A → ε ⊢ A ≡ A type)
       ∧ (∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (B : Tm m),
         eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ
-        → Γ_1 ⊢ B ≡ B type) 
+        → Γ_1 ⊢ B ≡ B type)
       ∧ ∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (A : Tm z) (B : Tm m),
         eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ
         → eqM ▸ 𝟙 = A
@@ -63,7 +63,7 @@ theorem defeq_refl_empty_form :
     → (∀ (eqM : n = 0) (A : Tm 0),
         eqM ▸ Γ = ε
         → eqM ▸ 𝟘 = A
-        → ε ⊢ A ≡ A type) 
+        → ε ⊢ A ≡ A type)
       ∧ (∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (B : Tm m),
         eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ
         → Γ_1 ⊢ B ≡ B type)
@@ -107,13 +107,13 @@ theorem defeq_refl_pi_form :
     ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)},
     Γ ⊢ A type
     → Γ ⬝ A ⊢ B type
-    → ((∀ (eqM : n = 0) (A_1 : Tm 0), 
+    → ((∀ (eqM : n = 0) (A_1 : Tm 0),
         eqM ▸ Γ = ε
         → eqM ▸ A = A_1
-        → ε ⊢ A_1 ≡ A_1 type) 
+        → ε ⊢ A_1 ≡ A_1 type)
       ∧ (∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (B : Tm m),
         eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ
-        → Γ_1 ⊢ B ≡ B type) 
+        → Γ_1 ⊢ B ≡ B type)
       ∧ ∀ (m z : Nat) (Γ_1 : Ctx m) (Δ : CtxGen (m + 1) z) (eqM : n = z) (A_1 : Tm z) (B : Tm m),
         eqM ▸ Γ = Γ_1 ⬝ B ⊗ Δ
         → eqM ▸ A = A_1
@@ -294,7 +294,7 @@ theorem defeq_refl_iden_form :
     Γ ⊢ A type
     → (Γ ⊢ a ∶ A)
     → (Γ ⊢ a' ∶ A)
-    → ((∀ (eqM : n = 0) (A_1 : Tm 0), 
+    → ((∀ (eqM : n = 0) (A_1 : Tm 0),
         eqM ▸ Γ = ε
         → eqM ▸ A = A_1
         → ε ⊢ A_1 ≡ A_1 type)

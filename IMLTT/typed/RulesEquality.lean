@@ -97,7 +97,7 @@ theorem use_equality_term {n : Nat} {Γ Δ : Ctx n} {A B a b : Tm n}
     simp_all
 
 theorem use_equality_type_eq {n : Nat} {Γ Δ : Ctx n} {A B A' B' : Tm n}
-    (hBB : Δ ⊢ B ≡ B' type) (heqΓ : Γ = Δ) (heqA : A = B) (heqA' : A' = B') 
+    (hBB : Δ ⊢ B ≡ B' type) (heqΓ : Γ = Δ) (heqA : A = B) (heqA' : A' = B')
     : Γ ⊢ A ≡ A' type :=
   by
     simp_all

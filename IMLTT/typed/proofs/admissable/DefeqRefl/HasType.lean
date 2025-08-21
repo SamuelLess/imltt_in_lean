@@ -9,7 +9,7 @@ import IMLTT.typed.JudgmentsAndRules
 theorem defeq_refl_var :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},
     Γ ⊢ A type
-    → ((∀ (eqM : x = 0) (A_1 : Tm 0), 
+    → ((∀ (eqM : x = 0) (A_1 : Tm 0),
         eqM ▸ Γ = ε
         → eqM ▸ A = A_1
         → ε ⊢ A_1 ≡ A_1 type)
@@ -967,7 +967,7 @@ theorem defeq_refl_unit_elim :
     Γ ⬝ 𝟙 ⊢ A type
     → (Γ ⊢ a ∶ A⌈⋆⌉₀)
     → (Γ ⊢ b ∶ 𝟙)
-    → ((∀ (eqM : n + 1 = 0) (A_1 : Tm 0), 
+    → ((∀ (eqM : n + 1 = 0) (A_1 : Tm 0),
         eqM ▸ Γ ⬝ 𝟙 = ε
         → eqM ▸ A = A_1
         → ε ⊢ A_1 ≡ A_1 type)
@@ -1059,7 +1059,7 @@ theorem defeq_refl_empty_elim :
     ∀ {n : Nat} {Γ : Ctx n} {A : Tm (n + 1)} {b : Tm n},
     Γ ⬝ 𝟘 ⊢ A type
     → (Γ ⊢ b ∶ 𝟘)
-    → ((∀ (eqM : n + 1 = 0) (A_1 : Tm 0), 
+    → ((∀ (eqM : n + 1 = 0) (A_1 : Tm 0),
         eqM ▸ Γ ⬝ 𝟘 = ε
         → eqM ▸ A = A_1
         → ε ⊢ A_1 ≡ A_1 type)
@@ -1147,7 +1147,7 @@ theorem defeq_refl_pi_elim :
         → eqM ▸ f = a
         → (eqM ▸ ΠA;B) = A_1
         → Γ_1 ⬝ B_1 ⊗ Δ ⊢ a ≡ a ∶ A_1)
-    → ((∀ (eqM : n = 0) (a_4 A_1 : Tm 0), 
+    → ((∀ (eqM : n = 0) (a_4 A_1 : Tm 0),
         eqM ▸ Γ = ε
         → eqM ▸ a = a_4
         → eqM ▸ A = A_1
@@ -1328,7 +1328,7 @@ theorem defeq_refl_nat_elim :
     → (Γ ⊢ z ∶ A⌈𝓏⌉₀)
     → (Γ ⬝ 𝒩 ⬝ A ⊢ s ∶ A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)
     → (Γ ⊢ x ∶ 𝒩)
-    → ((∀ (eqM : n + 1 = 0) (A_1 : Tm 0), 
+    → ((∀ (eqM : n + 1 = 0) (A_1 : Tm 0),
         eqM ▸ Γ ⬝ 𝒩 = ε
         → eqM ▸ A = A_1
         → ε ⊢ A_1 ≡ A_1 type)
