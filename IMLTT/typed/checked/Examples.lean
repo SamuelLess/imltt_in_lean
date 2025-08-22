@@ -176,9 +176,13 @@ example : ε ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) 𝓏 ∶ 𝒩 := by
   apply HasType.pi_elim this
   exact HasType.nat_zero_intro IsCtx.empty
 
-example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := by
+example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := fun hΓctx ↦
+  have h_pi := HasType.pi_intro (HasType.var (IsType.nat_form hΓctx));
+  HasType.pi_elim h_pi (HasType.nat_zero_intro hΓctx)
+
+example : (Γ ctx) -> Γ ⊢ (λ𝒩;v(0)) ◃ 𝓏 ∶ 𝒩 := by
   intro hΓctx
-  have : Γ ⊢ (Tm.lam 𝒩 v(0)) ∶ Tm.pi 𝒩 𝒩 := by
+  have : Γ ⊢ λ𝒩;v(0) ∶ Π𝒩;𝒩 := by
     apply HasType.pi_intro
     apply HasType.var
     apply IsType.nat_form
@@ -186,7 +190,7 @@ example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := by
   apply HasType.pi_elim this
   exact HasType.nat_zero_intro hΓctx
 
-example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) v(0) ∶ 𝒩 := by
+example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ (Tm.lam 𝒩 𝓈(v(0))) ◃ v(0) ∶ 𝒩 := by
   intro hΓctx
   have : Γ ⬝ 𝒩 ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 := by sorry
   apply HasType.pi_elim this
@@ -197,7 +201,7 @@ example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) v(0) ∶ �
 example : weaken ρ (.lam A b) =
     .lam (weaken ρ A) (weaken (lift_weak_n 1 ρ) b) := rfl
 
-def swap_args : (a -> b -> c) -> (b -> a -> c) := by exact fun a_1 a_2 a ↦ a_1 a a_2
+def swap_args : (a -> b -> c) -> (b -> a -> c) := fun a_1 a_2 a ↦ a_1 a a_2
 
 def swap (F : Tm n) (A : Tm (n+1)) (B : Tm (n+1)) : Tm n := λF;λB;λ(A⌊↑ₚidₚ⌋);v(2)◃v(0)◃v(1)
 
@@ -215,8 +219,6 @@ example {A : Tm n} {B : Tm n} (hAtype : Γ ⊢ A type) (hBtype : Γ ⊢ B type)
   --apply @HasType.pi_elim (n+3) ((Γ ⬝ ΠA;ΠB⌊↑ₚidₚ⌋;C) ⬝ B⌊↑ₚidₚ⌋ ⬝ A⌊↑ₚ↑ₚidₚ⌋) (v(2)◃v(0)) (v(1)) (C⌊⇑ₚ↑ₚ↑ₚidₚ⌋) (v(1))
   --apply @HasType.pi_intro (n+2) ((Γ ⬝ ΠA;ΠB⌊↑ₚidₚ⌋;C) ⬝ B⌊↑ₚidₚ⌋) (A⌊↑ₚ↑ₚidₚ⌋) (v(2)◃v(0)◃v(1)) (C⌊⇑ₚ↑ₚidₚ⌋)
   --apply @HasType.pi_intro (n+1) (Γ ⬝ ΠA;ΠB⌊↑ₚidₚ⌋;C) (A⌊↑ₚidₚ⌋) (λB⌊↑ₚ↑ₚidₚ⌋; v(2)◃v(1)◃v(0))
-
-
 
 @[simp]
 def shift : (n : Nat) -> Weak n 0
@@ -255,3 +257,68 @@ theorem intro_ctx (Γ : Ctx n) :
     rw [this, ←weakening_shift_id]
     rw (occs := [2]) [←weakening_shift_id]
     exact weakening_term (ih hΓ'ctx) hΓ'Atype
+
+theorem var_as_type : (Γ ctx) → (Γ ⬝ U ⊢ v(0) type) → (Γ ⬝ U ⬝ v(0) ⊢ v(0) ∶ v(1)) := by
+  intro hΓctx hv0type
+  apply HasType.var
+  exact hv0type
+
+theorem var_univ_type : ε ⬝ 𝒰 ⊢ v(0) type := by
+  apply boundary_type_eq_type' (A := v(0))
+  apply IsEqualType.univ_elim_eq
+  apply IsEqualTerm.var_eq
+  apply IsType.univ_form
+  exact IsCtx.empty
+
+theorem var_type : ε ⬝ 𝒰 ⬝ v(0) ⊢ v(0) ∶ v(1) := by
+  apply HasType.var
+  apply boundary_type_eq_type' (A := v(0))
+  apply IsEqualType.univ_elim_eq
+  apply IsEqualTerm.var_eq
+  apply IsType.univ_form
+  exact IsCtx.empty
+
+theorem var_type_univ : ε ⬝ 𝒰  ⊢ v(0) type := by
+  apply boundary_type_eq_type' (A := v(0))
+  apply IsEqualType.univ_elim_eq
+  apply IsEqualTerm.var_eq
+  apply IsType.univ_form
+  exact IsCtx.empty
+
+--#imltt ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ (IdA a) : A
+theorem var_type' : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1)◃v(0) ∶ v(2) := by
+  let Γ := ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)
+  have : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1) ∶ (Πv(0+2);v(1+2)) := by
+    --apply HasType.weak
+    apply HasType.weak (B:= v(1)) (Γ := ε ⬝ 𝒰 ⬝ (Πv(0);v(1))) (i := 0) (A := (Πv(1);v(2)))
+    · apply HasType.var (A := Πv(0);v(1))
+      refine IsType.pi_form ?_ ?_
+      · exact var_type_univ
+      · apply boundary_type_eq_type' (A := v(1))
+        apply IsEqualType.univ_elim_eq
+        apply IsEqualTerm.weak_eq (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
+        · aesop
+        · exact var_type_univ
+    · apply boundary_type_eq_type' (A := v(1))
+      apply IsEqualType.univ_elim_eq
+      apply IsEqualTerm.weak_eq (B := Πv(0);v(1)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
+      · aesop
+      · refine IsType.univ_elim ?_
+        apply HasType.univ_pi
+        · aesop
+        · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
+          · aesop
+          · aesop
+
+  apply HasType.pi_elim this
+  apply HasType.var
+  apply boundary_type_eq_type' (A := v(1))
+  apply IsEqualType.univ_elim_eq
+  apply IsEqualTerm.weak_eq (i := 0) (B := Πv(0);v(1)) (Γ := ε ⬝ 𝒰) (A := 𝒰)
+  · aesop
+  · refine IsType.univ_elim ?_
+    apply HasType.univ_pi
+    · aesop
+    · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
+      · aesop
+      · aesop

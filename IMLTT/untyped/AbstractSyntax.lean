@@ -49,3 +49,30 @@ infixl:94 " ⬝ " => Ctx.extend
 
 instance : Coe (Fin n) (Tm n) where
   coe n := .var n
+
+def Tm.toString : Tm n → String
+  | Tm.unit => "𝟙"
+  | Tm.empty => "𝟘"
+  | Tm.pi A B => s!"Π{A.toString};{B.toString}"
+  | Tm.sigma A B => s!"Σ{A.toString};{B.toString}"
+  | Tm.nat => "𝒩"
+  | Tm.iden A s t => s!"{s.toString}≃[{A.toString}]{t.toString}"
+  | Tm.univ => "𝒰"
+  | Tm.var n => s!"v({n})"
+  | Tm.tt => "⋆"
+  | Tm.lam A b => s!"λ{A.toString};{b.toString}"
+  | Tm.app f a => s!"{f.toString}◃{a.toString}"
+  | Tm.pairSigma a b => s!"{a.toString}&{b.toString}"
+  | Tm.zeroNat => "𝓏"
+  | Tm.succNat a => s!"𝓈({a.toString})"
+  | Tm.indUnit A b c => s!"indUnit {A.toString} {b.toString} {c.toString}"
+  | Tm.indEmpty A b => s!"indEmpty {A.toString} {b.toString}"
+  | Tm.indSigma A B C D E => s!"indSigma {A.toString} {B.toString} {C.toString}
+      {D.toString} {E.toString}"
+  | Tm.refl A B => s!"refl({A.toString},{B.toString})"
+  | Tm.indNat A b c d => s!"indNat {A.toString} {b.toString} {c.toString} {d.toString}"
+  | Tm.j A B C D E F => s!"j {A.toString} {B.toString} {C.toString}
+    {D.toString} {E.toString} {F.toString}"
+
+instance : ToString (Tm n) where
+  toString := Tm.toString
