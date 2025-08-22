@@ -11,7 +11,7 @@ import IMLTT.typed.RulesEquality
 import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 
-import IMLTT.typed.proofs.admissable.weakening.Helpers
+import IMLTT.typed.proofs.admissable.Weakening.Helpers
 
 theorem weakening_var :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},

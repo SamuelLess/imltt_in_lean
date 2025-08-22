@@ -7,11 +7,11 @@ import IMLTT.typed.JudgmentsAndRules
 import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 
-import IMLTT.typed.proofs.admissable.weakening.IsCtx
-import IMLTT.typed.proofs.admissable.weakening.IsType
-import IMLTT.typed.proofs.admissable.weakening.HasType
-import IMLTT.typed.proofs.admissable.weakening.IsEqualType
-import IMLTT.typed.proofs.admissable.weakening.IsEqualTerm
+import IMLTT.typed.proofs.admissable.Weakening.IsCtx
+import IMLTT.typed.proofs.admissable.Weakening.IsType
+import IMLTT.typed.proofs.admissable.Weakening.HasType
+import IMLTT.typed.proofs.admissable.Weakening.IsEqualType
+import IMLTT.typed.proofs.admissable.Weakening.IsEqualTerm
 
 -- ⇑ₙ↑id > weaken_from
 theorem weakening :
@@ -356,7 +356,7 @@ theorem weakening_term :
     · apply hB
     · omega
 
-theorem weakening_type_eq : 
+theorem weakening_type_eq :
     Γ ⊢ A ≡ A' type → Γ ⊢ B type → Γ ⬝ B ⊢ A⌊↑ₚidₚ⌋ ≡ A'⌊↑ₚidₚ⌋ type :=
   by
     intro hAA hB
@@ -368,7 +368,7 @@ theorem weakening_type_eq :
     · apply hB
     · omega
 
-theorem weakening_term_eq : 
+theorem weakening_term_eq :
     (Γ ⊢ a ≡ a' ∶ A) → Γ ⊢ B type → Γ ⬝ B ⊢ a⌊↑ₚidₚ⌋ ≡ a'⌊↑ₚidₚ⌋ ∶ A⌊↑ₚidₚ⌋ :=
   by
     intro haaA hB
@@ -426,7 +426,7 @@ theorem weakening_second_type_eq {n : Nat} {Γ : Ctx n} {B S : Tm n} {A A' : Tm 
     any_goals omega
 
 theorem weakening_second_term_eq {n : Nat} {Γ : Ctx n} {B S : Tm n} {a a' A : Tm (n + 1)} :
-    (Γ ⬝ S ⊢ a ≡ a' ∶ A) → Γ ⊢ B type 
+    (Γ ⬝ S ⊢ a ≡ a' ∶ A) → Γ ⊢ B type
     → Γ ⬝ B ⬝ (S⌊↑ₚidₚ⌋) ⊢ a⌊⇑ₚ↑ₚidₚ⌋ ≡ a'⌊⇑ₚ↑ₚidₚ⌋ ∶ A⌊⇑ₚ↑ₚidₚ⌋ :=
   by
     intro haaA hB
@@ -498,7 +498,7 @@ theorem useWeakTermwithWeak :
 --             apply hA
 --             apply hS
 --     termination_by Γ
--- 
+--
 --   theorem weakening_general_type_t {n l : Nat} {Γ : Ctx l} {Δ : CtxGen l n} {A : Tm n} {S : Tm l} :
 --       (Γ ⊗ Δ) ⊢ A type → (Γ ⊢ S type)
 --       → (Γ ⬝ S ⊗ (⌊↑₁↬l⌋Δ)) ⊢ A⌊↑₁n↬l⌋ type :=
@@ -523,7 +523,7 @@ theorem useWeakTermwithWeak :
 --           apply hS
 --       | _ => sorry
 --     termination_by Γ
--- 
+--
 --   theorem weakening_general_term_t {n l : Nat} {Γ : Ctx l} {Δ : CtxGen l n} {A a : Tm n} {S : Tm l} :
 --       ((Γ ⊗ Δ) ⊢ a ∶ A) → (Γ ⊢ S type)
 --       → (Γ ⬝ S ⊗ (⌊↑₁↬l⌋Δ)) ⊢ a⌊↑₁n↬l⌋ ∶ A⌊↑₁n↬l⌋ :=
@@ -573,7 +573,7 @@ theorem useWeakTermwithWeak :
 --         | _ =>
 --           sorry
 --     termination_by Γ
--- 
+--
 --   theorem weakening_general_type_eq_t {n l : Nat} {Γ : Ctx l} {Δ : CtxGen l n} {A A' : Tm n} {S : Tm l} :
 --       (Γ ⊗ Δ) ⊢ A ≡ A' type → (Γ ⊢ S type)
 --       → (Γ ⬝ S ⊗ (⌊↑₁↬l⌋Δ)) ⊢ A⌊↑₁n↬l⌋ ≡ A'⌊↑₁n↬l⌋ type :=

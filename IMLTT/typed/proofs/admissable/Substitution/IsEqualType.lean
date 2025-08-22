@@ -10,9 +10,9 @@ import IMLTT.typed.JudgmentsAndRules
 import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 
-import IMLTT.typed.proofs.admissable.substitution.Helpers
+import IMLTT.typed.proofs.admissable.Substitution.Helpers
 
-theorem substitution_gen_unit_form_eq : 
+theorem substitution_gen_unit_form_eq :
     ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → (∀ (m l : Nat) (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) (s S : Tm l),
@@ -292,7 +292,7 @@ theorem substitution_gen_univ_form_eq :
       · apply hsS
       · rfl
 
-theorem substitution_gen_univ_elim_eq : 
+theorem substitution_gen_univ_elim_eq :
     ∀ {n : Nat} {Γ : Ctx n} {A A' : Tm n},
     (Γ ⊢ A ≡ A' ∶ 𝒰)
     → (∀ (m l : Nat) {leq : l ≤ m} (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) (s S : Tm l)

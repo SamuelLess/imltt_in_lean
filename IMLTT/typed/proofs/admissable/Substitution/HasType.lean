@@ -11,7 +11,7 @@ import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 import IMLTT.typed.proofs.admissable.Weakening
 
-import IMLTT.typed.proofs.admissable.substitution.Helpers
+import IMLTT.typed.proofs.admissable.Substitution.Helpers
 
 theorem substitution_gen_var :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},
@@ -718,7 +718,7 @@ theorem substitution_gen_pi_elim :
       · apply hsS
       · rfl
 
-theorem substitution_gen_sigma_elim : 
+theorem substitution_gen_sigma_elim :
     ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {p : Tm n} {C : Tm (n + 1)} {c : Tm (n + 1 + 1)},
     (Γ ⬝ ΣA;B) ⊢ C type
     → (Γ ⬝ A ⬝ B ⊢ c ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)

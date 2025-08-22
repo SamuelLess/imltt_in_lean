@@ -11,7 +11,7 @@ import IMLTT.typed.RulesEquality
 import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 
-import IMLTT.typed.proofs.admissable.weakening.Helpers
+import IMLTT.typed.proofs.admissable.Weakening.Helpers
 
 theorem weakening_var_eq :
     ∀ {x : Nat} {Γ : Ctx x} {A : Tm x},
@@ -712,7 +712,7 @@ theorem weakening_sigma_intro_eq :
       repeat' rfl
 
 theorem weakening_sigma_elim_eq :
-    ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {A' : Tm n} {B' : Tm (n + 1)} {p p' : Tm n} 
+    ∀ {n : Nat} {Γ : Ctx n} {A : Tm n} {B : Tm (n + 1)} {A' : Tm n} {B' : Tm (n + 1)} {p p' : Tm n}
     {C C' : Tm (n + 1)} {c c' : Tm (n + 1 + 1)},
     (Γ ⬝ ΣA;B) ⊢ C ≡ C' type
     → (Γ ⬝ A ⬝ B ⊢ c ≡ c' ∶ C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)

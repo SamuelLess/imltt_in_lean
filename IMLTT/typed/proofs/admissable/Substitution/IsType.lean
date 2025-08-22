@@ -11,9 +11,9 @@ import IMLTT.typed.RulesEquality
 import IMLTT.typed.proofs.Recursor
 import IMLTT.typed.proofs.boundary.BoundaryIsCtx
 
-import IMLTT.typed.proofs.admissable.substitution.Helpers
+import IMLTT.typed.proofs.admissable.Substitution.Helpers
 
-theorem substitution_gen_unit_form : 
+theorem substitution_gen_unit_form :
     ∀ {n : Nat} {Γ : Ctx n},
     Γ ctx
     → (∀ (m l : Nat) (Γ_1 : Ctx l) (Δ : CtxGen (l + 1) (m + 1)) (eqM : n = m + 1) (s S : Tm l),
