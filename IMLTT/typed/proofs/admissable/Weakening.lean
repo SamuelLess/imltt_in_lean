@@ -294,7 +294,7 @@ theorem weakening_general_type {n l : Nat} {Γ : Ctx l} {Δ : CtxGen l n} {A : T
     → (Γ ⬝ S ⊗ (⌊↑₁↬l⌋Δ)) ⊢ A⌊↑₁n↬l⌋ type :=
   by
     intro hA hS
-    apply And.left (And.right weakening) hA hS
+    exact And.left (And.right weakening) hA hS
 
 theorem weakening_general_term {n l : Nat} {Γ : Ctx l} {Δ : CtxGen l n} {A a : Tm n} {S : Tm l} :
     ((Γ ⊗ Δ) ⊢ a ∶ A) → (Γ ⊢ S type)
