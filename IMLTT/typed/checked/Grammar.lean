@@ -3,32 +3,6 @@ import IMLTT.typed.checked.TypeChecker
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command
 
-declare_syntax_cat unary_E's (behavior := both)
-syntax "E" : unary_E's
-syntax unary_E's "," unary_E's : unary_E's
-
-#check_failure `(unary_E's| E,E,E)
-
-partial def parseUnaryEs : TSyntax `unary_E's → Nat
-  | `(unary_E's| E) => 1
-  | `(unary_E's| E, $Es:unary_E's) => 1 + parseUnaryEs Es
-  | _ => 0
-
-/- syntax "#is_even " unary_E's : command
-@[command_elab is_even_num] def evenNumElab : CommandElab := fun stx => do
-  let `(#is_even $es:unary_E's) := stx
-    | throwUnsupportedSyntax -/
-elab "#is_even " es:unary_E's : command => do
-  let x := parseUnaryEs es
-  match is_even x with
-  | some _ => logInfo s!"'{x} is even by decided proof'"
-  | none => logInfo s!"'{x} is not even'"
-
--- Example usage:
-#is_even E  -- 1 is not even
-#is_even E,E,E,E  -- 4 is even by decided proof
-
-
 -- syntax for inductive Tm type
 declare_syntax_cat tm (behavior := both)
 
