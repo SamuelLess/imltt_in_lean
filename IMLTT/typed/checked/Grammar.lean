@@ -7,65 +7,186 @@ open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command
 declare_syntax_cat tm (behavior := both)
 
 -- 'types'
-syntax "𝟙" : tm
 syntax "𝟘" : tm
-syntax "Π " tm ", " tm : tm
+syntax "𝟙" : tm
+syntax "𝒩" : tm
+syntax "𝒰" : tm
+syntax tm " → " tm : tm -- nondependent Pi type
+syntax "Π" "(" ident ":" tm ")" ";"  tm : tm
+syntax "Σ" "(" ident ":" tm ")" ";"  tm : tm
 -- 'terms'
---syntax ident : tm
+syntax ident : tm
 syntax "⋆" : tm
-syntax "λ " ident " : " tm ". " tm : tm
+syntax "𝓏" : tm
+syntax "λ " "(" ident " : " tm  ")" ". " tm " :: " tm : tm
+syntax "(" tm "&" tm ")" "::" tm: tm
 syntax tm tm : tm
-syntax tm " → " tm : tm -- Pi type
+syntax tm " & " tm : tm -- annotated dependent Sigma type
 syntax "(" tm ")" : tm
 
 #check_failure `(tm|𝟙 → 𝟙)
-#check_failure `(tm|Π 𝟙, 𝟙)
+#check_failure `(tm|λ(x : 𝟙). x :: 𝟙)
+#check_failure `(tm|Π(x : 𝟙);𝟙)
+#check_failure `(tm|Σ(x : 𝒰);x)
 
-partial def parseTm : TSyntax `tm → TermElabM (Tm n)
-  | `(tm| ($t:tm)) => parseTm t
-  | `(tm| ⋆) => pure Tm.tt
-  | `(tm| 𝟙) => pure Tm.unit
-  | `(tm| 𝟘) => pure Tm.empty
-  | `(tm| Π $A:tm, $B:tm) => do
-    let A ← parseTm A
-    let B ← parseTm B
-    pure <| Tm.pi A B
-  -- identifier are a future me problem, should be replaced in B n stuff
-  | `(tm| λ $_:ident : $A:tm. $B:tm) => do
-    let A ← parseTm A
-    let B ← parseTm B
-    pure <| Tm.lam A B
-  | `(tm| $A:tm $B:tm) => do
-    let A ← parseTm A
-    let B ← parseTm B
-    pure <| Tm.app A B
+
+inductive ATm : Nat → Type where
+  -- 'types'
+  | unit : ATm n
+  | empty : ATm n
+  | pi : Syntax.Ident → ATm n → ATm (n + 1) → ATm n
+  | sigma : Syntax.Ident → ATm n → ATm (n + 1) → ATm n
+  | nat : ATm n
+  | iden : ATm n → ATm n → ATm n → ATm n
+  | univ : ATm n
+  -- 'terms'
+  | var : Syntax.Ident → Fin n → ATm n -- added name and meaning of Fin n becomes stack height
+  | tt : ATm n
+  | indUnit : ATm (n + 1) → ATm n → ATm n → ATm n
+  | indEmpty : ATm (n + 1) → ATm n → ATm n
+  -- λx:A. b B where b⌈x⌉ : B⌈x⌉
+  | lam : Syntax.Ident → ATm n → ATm (n + 1) → ATm (n + 1) → ATm n -- added Π type annotation
+  | app : ATm n → ATm n → ATm n
+  -- a & b : A, B (dependent)
+  | pairSigma : Syntax.Ident → ATm n → ATm n → ATm n → ATm (n+1) → ATm n -- add Σ type annotation
+  | indSigma: ATm n → ATm (n + 1) → ATm (n + 1) → ATm (n + 2) → ATm n → ATm n
+  | zeroNat : ATm n
+  | succNat : ATm n → ATm n
+  | indNat : ATm (n + 1) → ATm n → ATm (n + 2) → ATm n → ATm n
+  | refl : ATm n → ATm n → ATm n
+  | j : ATm n → ATm (n + 3) → ATm (n + 1) → ATm n → ATm n → ATm n → ATm n
+
+example {f : Fin n} : n-f.toNat <= n := by simp
+
+#check (ATm.var _ ⟨0, by omega⟩ : ATm (1))
+
+def ATm.toTm {n} : ATm n → Tm n
+  | .unit => Tm.unit
+  | .empty => Tm.empty
+  | .pi _ A B => Tm.pi (A.toTm) (B.toTm)
+  | .sigma _ A B => Tm.sigma (A.toTm) (B.toTm)
+  | .nat => Tm.nat
+  | .iden A a b => Tm.iden (A.toTm) (a.toTm) (b.toTm)
+  | .univ => Tm.univ
+  | .var _ i => Tm.var i
+  | .tt => Tm.tt
+  | .indUnit P z c => Tm.indUnit (P.toTm) (z.toTm) (c.toTm)
+  | .indEmpty P c => Tm.indEmpty (P.toTm) (c.toTm)
+  | .lam _ A b _ => Tm.lam (A.toTm) (b.toTm)
+  | .app f a => Tm.app (f.toTm) (a.toTm)
+  | .pairSigma _ a b _ _ => Tm.pairSigma (a.toTm) (b.toTm)
+  | .indSigma A P cs C p => Tm.indSigma (A.toTm) (P.toTm) (cs.toTm) (C.toTm) (p.toTm)
+  | .zeroNat => Tm.zeroNat
+  | .succNat n => Tm.succNat (n.toTm)
+  | .indNat P z s n => Tm.indNat (P.toTm) (z.toTm) (s.toTm) (n.toTm)
+  | .refl A a => Tm.refl (A.toTm) (a.toTm)
+  | .j A P a b p r => Tm.j (A.toTm) (P.toTm) (a.toTm) (b.toTm) (p.toTm) (r.toTm)
+
+inductive ACtx : Nat → Type where
+  | empty : ACtx 0
+  | extend : ACtx n → (id : Syntax.Ident) → ATm n → ACtx (n + 1)
+
+def ACtx.toList : ACtx n → List ((n : Nat) × Syntax.Ident × ATm n)
+  | .empty => []
+  | @ACtx.extend n cx id ty => ⟨n, id, ty⟩ :: cx.toList
+
+theorem ACtx.length {n} (cx : ACtx n) : cx.toList.length = n := by
+  induction cx with
+  | empty => simp only [toList, List.length_nil]
+  | extend cx' id ty ih => simp only [toList, List.length_cons, ih]
+
+notation cx " ⬝ " "(" id " : " ty ")" => ACtx.extend cx id ty
+
+def ACtx.toCtx {n} : ACtx n → Ctx n
+  | .empty => Ctx.empty
+  | .extend cx _ ty => Ctx.extend (ACtx.toCtx cx) (ty.toTm)
+
+-- n is the the number of variables
+partial def parseATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
+  | `(tm| ($t:tm)) => parseATm cx t
+  -- types
+  | `(tm| 𝟘) => pure .empty
+  | `(tm| 𝟙) => pure .unit
+  | `(tm| 𝓏) => pure .zeroNat
+  | `(tm| 𝒰) => pure .univ
+  | `(tm| Π ($id:ident : $A:tm); $B:tm) => do
+    let A  ← parseATm cx A
+    let B ← parseATm (cx ⬝ (id : A)) B
+    pure <| .pi id A B
+  | `(tm| Σ ($id:ident : $A:tm); $B:tm) => do
+    let A  ← parseATm cx A
+    let B ← parseATm (cx ⬝ (id : A)) B
+    pure <| .sigma id A B
+  -- terms
+  | `(tm| ⋆) => pure .tt
+  | `(tm| 𝒩) => pure .nat
+  | `(tm| λ ($id:ident : $A:tm). $b:tm :: $B:tm) => do
+    let A  ← parseATm cx A
+    let b ← parseATm (cx ⬝ (id : A)) b
+    let B ← parseATm (cx ⬝ (id : A)) B
+    pure <| .lam id A b B
+  | `(tm| $f:tm $a:tm) => do
+    let f ← parseATm cx f
+    let a ← parseATm cx a
+    pure <| .app f a
+  | `(tm| $id:ident) => do
+    match n with
+    | 0 => throwErrorAt id m!"No variables in context"
+    | n' + 1 => do
+      let cxlist := cx.toList.map (·.2.1)
+      let (some ⟨i, hi⟩) := cxlist.findFinIdx? (· == id)
+        | throwErrorAt id m!"Variable {id} not in context {cxlist}"
+      have : cxlist.length = n' + 1 := by
+        simp only [cxlist, List.length_map]
+        exact ACtx.length cx
+      pure <| .var id ⟨i, Nat.lt_of_lt_of_eq hi this⟩
   | _ => throwUnsupportedSyntax
 
+-- TODO: remove or test with Tm n -> Expr
+partial def parseATmExpr (cx : ACtx n) : TSyntax `tm → MetaM Expr
+  | `(tm| ($t:tm)) => parseATmExpr cx t
+  | `(tm| 𝟙) => return .const ``ATm.unit []
+  | `(tm| Π ($id:ident : $A:tm); $B:tm) => do
+    let A ← parseATmExpr cx A
+    let B ← parseATmExpr cx B
+    --let id' ← Lean.Expr
+    mkAppM  ``ATm.pi #[`id, A,  B]
+  | _ => throwUnsupportedSyntax
 
--- syntax for inductive Ctx type
+-- syntax for inductive ACtx type
 declare_syntax_cat ctxx (behavior := both)
 syntax "ε" : ctxx
-syntax ctxx " ⬝ " ident " : " tm : ctxx
+syntax ctxx " ⬝ " " ( " ident " : " tm  " ) " : ctxx
 
-#check_failure `(ctxx| ε ⬝ x : 𝟙)
+#check_failure `(ctxx| ε ⬝ (x : 𝟙))
+#check_failure `(ctxx| ε ⬝ (T : 𝒰) ⬝ (t : T))
 
-def parseCtx : (stx : TSyntax `ctxx) → Option ((n: Nat) × Ctx n)
-  | `(ctxx|ε) => some ⟨0, Ctx.empty⟩
-  --| `(ctxx|$cx:ctxx ⬝ $id:ident : $ty:tm) => (parseCtx cx).extend (parseTm ty)
-  | _ => none
+#check (ε ⬝ 𝒩 : Ctx 1)
 
+partial def parseACtx : (stx : TSyntax `ctxx) → TermElabM ((n : Nat) × ACtx n)
+  | `(ctxx|ε) => pure ⟨0, .empty⟩
+  | `(ctxx|$cx:ctxx ⬝ ($id:ident : $ty:tm)) => do
+    let ⟨n', cx'⟩ ← parseACtx cx
+    let nty ← parseATm cx' ty
+    let newCtx := ACtx.extend cx' id nty
+    pure ⟨n' + 1, newCtx⟩
+  | _ => throwUnsupportedSyntax
 
-elab "#judge " t:tm : command => do
-  let term ← liftTermElabM (parseTm t)
-  let ctxx := Ctx.empty
-  let res : Option (PLift (ctxx ⊢ term type)) := is_type fuel 0 ctxx term
-  match res with
-  | some _proof => logInfo s!"TYPE: ε ⊢ {t} type"
-  | none => logInfo s!"NOT A TYPE in ε"
+elab "#imltt " cx:ctxx "⊢" t:tm : command => do
+  let ⟨_, acontext⟩ ← liftTermElabM (parseACtx cx)
+  let aterm ← liftTermElabM (parseATm acontext t)
+  logInfo s!"Context: {acontext.toList.map (·.2.1)|>.reverse}, term: {aterm.toTm}"
 
-#judge 𝟙
-#judge (Π 𝟙, 𝟙)
-#judge ((λ x:𝟙. 𝟙) 𝟙)
+#imltt ε ⊢ 𝓏
+#imltt ε ⬝ (T : 𝒰) ⬝ (t : 𝒩) ⊢ λ(x : 𝒰).x :: T
+#imltt ε ⬝ (a : 𝒰) ⬝ (b : 𝒩) ⬝ (c : 𝒩) ⬝ (d : 𝒩) ⬝ (e : 𝒩) ⊢ c
+
+elab "#imltt " cx:ctxx "⊢" t:tm  " : " T:tm : command => do
+  let ⟨_, acontext⟩ ← liftTermElabM (parseACtx cx)
+  let aterm ← liftTermElabM (parseATm acontext t)
+  let atype ← liftTermElabM (parseATm acontext t)
+  logInfo s!"Context: {acontext.toList.map (·.2.1)|>.reverse}, term: {aterm.toTm}"
+
 
 elab "#check_ty " t:tm " ∶ " T:tm : command => do
   let term ← liftTermElabM <| parseTm t
@@ -77,11 +198,6 @@ elab "#check_ty " t:tm " ∶ " T:tm : command => do
   | none => logInfo s!"Type could not be inferred in ε"
 
 
-#check_ty (⋆) ∶ (𝟙)
-
-#check_ty (λ x:𝟙. 𝟙) ∶ Π 𝟙 , 𝟙
-
-example : ε ⊢ ((λ𝟙; v(0))◃𝟙) type := by sorry
 example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
   have hεctx : ε ctx := IsCtx.empty
   have hLamPi : ε ⊢ (λ𝟙; 𝟙) ∶ Π𝟙;𝒰 := by

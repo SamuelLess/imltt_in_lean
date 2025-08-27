@@ -176,9 +176,13 @@ example : ε ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) 𝓏 ∶ 𝒩 := by
   apply HasType.pi_elim this
   exact HasType.nat_zero_intro IsCtx.empty
 
-example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := by
+example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := fun hΓctx ↦
+  have h_pi := HasType.pi_intro (HasType.var (IsType.nat_form hΓctx));
+  HasType.pi_elim h_pi (HasType.nat_zero_intro hΓctx)
+
+example : (Γ ctx) -> Γ ⊢ (λ𝒩;v(0)) ◃ 𝓏 ∶ 𝒩 := by
   intro hΓctx
-  have : Γ ⊢ (Tm.lam 𝒩 v(0)) ∶ Tm.pi 𝒩 𝒩 := by
+  have : Γ ⊢ λ𝒩;v(0) ∶ Π𝒩;𝒩 := by
     apply HasType.pi_intro
     apply HasType.var
     apply IsType.nat_form
@@ -186,7 +190,7 @@ example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := by
   apply HasType.pi_elim this
   exact HasType.nat_zero_intro hΓctx
 
-example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) v(0) ∶ 𝒩 := by
+example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ (Tm.lam 𝒩 𝓈(v(0))) ◃ v(0) ∶ 𝒩 := by
   intro hΓctx
   have : Γ ⬝ 𝒩 ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 := by sorry
   apply HasType.pi_elim this
@@ -197,7 +201,7 @@ example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) v(0) ∶ �
 example : weaken ρ (.lam A b) =
     .lam (weaken ρ A) (weaken (lift_weak_n 1 ρ) b) := rfl
 
-def swap_args : (a -> b -> c) -> (b -> a -> c) := by exact fun a_1 a_2 a ↦ a_1 a a_2
+def swap_args : (a -> b -> c) -> (b -> a -> c) := fun a_1 a_2 a ↦ a_1 a a_2
 
 def swap (F : Tm n) (A : Tm (n+1)) (B : Tm (n+1)) : Tm n := λF;λB;λ(A⌊↑ₚidₚ⌋);v(2)◃v(0)◃v(1)
 
