@@ -83,8 +83,11 @@ mutual
       let weak := HasType.weak h is_type_T.down
       let eq_type ← is_eq_type f (Γ ⬝ T) (T''⌊↑ₚidₚ⌋) T'
       return .up <| HasType.ty_conv weak eq_type.down
-    | f+1, Γ ⬝ T, t, v(⟨i,_⟩) =>
+    | f+1, Γ ⬝ T, t, v(i) => do
       -- FIXME: this should be possible! Γ ⬝ 𝒰 ⬝ Πv(0);v(1) ⊢ λv(1);v(0) ∶ v(0)
+      let ⟨T', ht'⟩ ← infer_type f (Γ ⬝ T) v(i)
+      --have := HasType.ty_conv
+
       .error s!"has_type: can't show {t}∶v({i}) if v({i}) is unkown value of type {T}"
     | f+1, Γ, λA;t, ΠA';B' => do
       let eq_type ← is_eq_type f Γ A A'
