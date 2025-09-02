@@ -3,7 +3,7 @@ import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
-def fuel := 20 -- proof go brrr 🚗
+def fuel := 50 -- proof go brrr 🚗
 
 def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PLift (Γsome ⊢ T type)))
     -> (Γ : Ctx n) -> Except String (PLift (Γ ctx))
@@ -83,23 +83,13 @@ mutual
       let weak := HasType.weak h is_type_T.down
       let eq_type ← is_eq_type f (Γ ⬝ T) (T''⌊↑ₚidₚ⌋) T'
       return .up <| HasType.ty_conv weak eq_type.down
-    | f+1, Γ ⬝ T, t, v(i) => do
-      -- FIXME: this should be possible! Γ ⬝ 𝒰 ⬝ Πv(0);v(1) ⊢ λv(1);v(0) ∶ v(0)
-      let ⟨T', ht'⟩ ← infer_type f (Γ ⬝ T) v(i)
-      --have := HasType.ty_conv
-
-      .error s!"has_type: can't show {t}∶v({i}) if v({i}) is unkown value of type {T}"
-    | f+1, Γ, λA;t, ΠA';B' => do
-      let eq_type ← is_eq_type f Γ A A'
-      let is_type_A ← is_type f _ Γ A
-      let is_type_B' ← is_type f _ (Γ ⬝ A) B'
+    | f+1, Γ, λA;t, P => do
+      let ⟨ΠA';B', hp⟩ ← infer_type f Γ (λA;t)
+        | .error s!"has_type: Π-type at {λA;t}"
       let has_type_t ← has_type f (Γ ⬝ A) t B' -- v(0) is now bound by A
       let pi_intro := HasType.pi_intro has_type_t.down
-      let pi_type := IsType.pi_form is_type_A.down is_type_B'.down
-      let ⟨_, hB'type⟩ := pi_is_type_inversion pi_type
-      let hB'rfl := defeq_refl_type hB'type
-      let pi_eq : (Γ ⊢ ΠA;B' ≡ ΠA';B' type) := IsEqualType.pi_form_eq eq_type.down hB'rfl
-      return .up <| HasType.ty_conv pi_intro pi_eq
+      let p_eq ← is_eq_type f Γ (ΠA;B') P
+      return .up <| HasType.ty_conv pi_intro p_eq.down
     | f+1, Γ, a&b, ΣA;B => do
       let is_type_B ← is_type f _ (Γ ⬝ A) B
       let has_type_a ← has_type f Γ a A
@@ -110,7 +100,6 @@ mutual
       let ⟨ΠA;B, hg⟩ ← infer_type f Γ g
         | .error s!"has_type: expected lambda term at {g}"
       let has_type_a ← has_type f Γ a A
-      let has_type_a ← has_type f Γ a A
       have pi_elim := HasType.pi_elim hg has_type_a.down
       let conv_eq : PLift (Γ ⊢ B⌈a⌉₀ ≡ B' type) ← is_eq_type f Γ (B⌈a⌉₀) B'
       return .up <| HasType.ty_conv pi_elim conv_eq.down
@@ -119,7 +108,7 @@ mutual
 
   def is_eq_type : (fuel : Nat) -> (Γ : Ctx n) → (A : Tm n) → (B : Tm n) →
       Except String (PLift (Γ ⊢ A ≡ B type))
-    | 0, _, _, _ => .error "is_eq_type: out of fuel"
+    | 0, _, A, B => .error s!"is_eq_type: out of fuel {A} ≡ {B}"
     | f+1, Γ, 𝟙, 𝟙 => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualType.unit_form_eq ctx_ok.down
@@ -146,8 +135,6 @@ mutual
       let eq_term_in_𝒰 ← is_eq_term f (Γ ⬝ T) v(⟨i,_⟩) T' 𝒰
       return .up <| IsEqualType.univ_elim_eq eq_term_in_𝒰.down
     | f+1, Γ, g◃x, T => do
-      /-let ⟨Π_;_, _⟩ ← infer_type f Γ g
-        | .error s!"is_eq_type: expected a lambda term at {g}"-/
       let eq_term_in_𝒰 ← is_eq_term f Γ (g◃x) T 𝒰
       return .up <| IsEqualType.univ_elim_eq eq_term_in_𝒰.down
     | f+1, Γ, a₁ ≃[A] a₃, a₂ ≃[A'] a₄ => do
@@ -175,6 +162,9 @@ mutual
       let is_eq_T_T' ← is_eq_type f (Γ ⬝ T) (T⌊↑ₚidₚ⌋) T'
       have := IsEqualTerm.var_eq is_type_T.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_T_T'.down
+    | f+1, Γ ⬝ T, v(i), v(j), T' => do
+      -- TODO: build this case
+      .error s!"is_eq_term: weakening is unsupported v({i}) ≡ v({j}) ∶ {T'}"
     | f+1, Γ, (λA;b)◃x, t, T => do
       let ⟨Π_;B, _⟩ ← infer_type f Γ (λA;b)
         | .error s!"is_eq_term: could not infer type of {λA;b}"
@@ -186,7 +176,7 @@ mutual
       have := IsEqualTerm.term_trans pi_comp is_eq_term_b.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_B_T.down
     | _, _, a, a', A =>
-      .error s!"is_eq_term: unsupported pattern for either side or type {a} ≃[{A}] {a'}"
+      .error s!"is_eq_term: unsupported pattern for either side or type {a} ≡ {a'} : {A}"
   termination_by structural f => f
 
   def infer_type : (fuel : Nat) → (Γ : Ctx n) → (t : Tm n) → Except String (Σ' T, Γ ⊢ t ∶ T)
@@ -211,7 +201,6 @@ mutual
       return .mk (T⌊↑ₚidₚ⌋) <| HasType.var is_type_T.down
     | f+1, Γ ⬝ T, v(⟨(i+1), _⟩) => do
       let ⟨T', h⟩ ← infer_type f Γ v(.mk i (by simp_all only [Nat.add_lt_add_iff_right]))
-      let is_type_T' ← is_type f _ Γ T'
       let is_type_T ← is_type f _ Γ T
       return .mk (T'⌊↑ₚidₚ⌋) <| HasType.weak h is_type_T.down
     | f+1, Γ, λA;b => do
@@ -244,41 +233,70 @@ set_option pp.proofs true
 instance : ToString (Except String (PLift α)) where
   toString e := match e with
     | .error s => s
-    | .ok _ => "proof was found yay"
+    | .ok _ => "success"
 
-#reduce (has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) v(1) 𝒩)
-#reduce (has_type fuel (ε ⬝ 𝟘 ⬝ 𝒩 ⬝ 𝟙) v(2) 𝟘)
-#reduce (has_type fuel ε ((λ𝒰; v(0))◃𝟙) 𝒰)
-#reduce (is_eq_type fuel (ε ⬝ 𝟙) 𝟙 (𝟙⌊↑ₚidₚ⌋⌈v(0)⌉₀))
+/-- info: success -/
+#guard_msgs in
+#eval (has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) v(1) 𝒩)
+/-- info: success -/
+#guard_msgs in
+#eval (has_type fuel (ε ⬝ 𝟘 ⬝ 𝒩 ⬝ 𝟙) v(2) 𝟘)
+/-- info: success -/
+#guard_msgs in
+#eval (has_type fuel ε ((λ𝒰; v(0))◃𝟙) 𝒰)
+/-- info: success -/
+#guard_msgs in
+#eval (is_eq_type fuel (ε ⬝ 𝟙) 𝟙 (𝟙⌊↑ₚidₚ⌋⌈v(0)⌉₀))
 
 theorem star_unit : ε ⊢ ⋆ ∶ 𝟙 := ((has_type 1 ε ⋆ 𝟙).toOption.get (by native_decide)).down
 
-#reduce has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)
 
 theorem idpi : ε ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 :=
   ((has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)).toOption.get (by native_decide)).down
 
-#reduce has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0)))◃v(1)) 𝒩
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0)))◃v(1)) 𝒩
 
-#reduce has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&v(0))◃v(1)) (Σ𝒩;𝒩)
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&v(0))◃v(1)) (Σ𝒩;𝒩)
 
 def ret_id : Tm n := (λ𝒰;(λv(0);v(0)))
 
-#reduce has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((ret_id◃𝒩)◃v(0)))◃v(1)) (Σ𝒩;𝒩)
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((ret_id◃𝒩)◃v(0)))◃v(1)) (Σ𝒩;𝒩)
 
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((λ𝒰;(λv(0);v(0))◃𝒩)◃v(0)))◃v(1)) (Σ𝒩;𝒩)
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((λ𝒰;(λv(0);v(0))◃𝒩)◃v(0)))◃v(1)) (Σ𝒩;𝒩)
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((λ𝒰;((λv(0);v(0))))◃𝒩◃v(0)))◃v(1)) (Σ𝒩;𝒩)
 
-#reduce has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃v(1)) 𝒩
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃v(1)) 𝒩
 
+/-- info: success -/
+#guard_msgs in
 #eval has_type fuel (ε ⬝ 𝒩) ((λ𝒩;v(0))◃v(0)) 𝒩
+/-- info: success -/
+#guard_msgs in
 #eval has_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒰
+/-- info: success -/
+#guard_msgs in
 #eval has_type fuel (ε ⬝ 𝒩) ((λ(((λ𝒰;v(0)))◃𝒩);v(0))◃v(0)) 𝒩
 
+/-- info: success -/
+#guard_msgs in
 #eval is_eq_type fuel (ε ⬝ 𝒰) v(0) v(0)
 
+/-- info: success -/
+#guard_msgs in
 #eval has_type fuel (ε ⬝ 𝒰) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃𝓏) 𝒩
-#eval has_type fuel (ε ⬝ 𝒰 ⬝ Πv(0);v(1)) (((v(0) ◃ (λv(0);v(0)))◃𝒩)◃𝓏) 𝒩
+#eval has_type fuel (ε ⬝ 𝒰 ⬝ Πv(0);v(1)) ((v(0) ◃ v(1))) v(2)
 
 /-
 Γ ⬝ A ⬝ B ⬝ C ⊢ (λ(ΠB;C);(λ(ΠA;B);(λA; v(2)◃(v(1)◃v(0)))) : ΠA;C
@@ -287,10 +305,9 @@ def ret_id : Tm n := (λ𝒰;(λv(0);v(0)))
 #eval has_type fuel (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ 𝒰)
     (λ(Πv(1);v(0+1));(λ(Πv(2+1);v(1+1+1));(λv(2+1+1); v(2)◃(v(1)◃v(0))))) (Πv(2);v(1))
 
-#reduce is_eq_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒩
+/-- info: success -/
+#guard_msgs in
+#eval is_eq_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒩
 
 example : ε ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 :=
   ((has_type fuel ε (Tm.lam 𝒩 𝓈(v(0))) (Tm.pi 𝒩 𝒩)).toOption.get (by native_decide)).down
-
-
-#check Lean.Expr

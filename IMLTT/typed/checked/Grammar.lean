@@ -18,6 +18,7 @@ syntax "Σ" "(" ident ":" tm ";"  tm ")" : tm
 syntax ident : tm
 syntax "⋆" : tm
 syntax "𝓏" : tm
+syntax "𝓈(" tm ")" : tm
 syntax "λ " "(" ident " : " tm  ")" ". " tm " :: " tm : tm
 syntax "λ " "(" ident " : " tm  ")" ". " tm : tm
 syntax "(" tm "&" tm ")" "::" tm : tm
@@ -106,7 +107,7 @@ partial def parseATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
   -- types
   | `(tm| 𝟘) => pure .empty
   | `(tm| 𝟙) => pure .unit
-  | `(tm| 𝓏) => pure .zeroNat
+  | `(tm| 𝒩) => pure .nat
   | `(tm| 𝒰) => pure .univ
   | `(tm| Π ($id:ident : $A:tm; $B:tm)) => do
     let A  ← parseATm cx A
@@ -118,12 +119,20 @@ partial def parseATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
     pure <| .sigma id A B
   -- terms
   | `(tm| ⋆) => pure .tt
-  | `(tm| 𝒩) => pure .nat
+  | `(tm| 𝓏) => pure .zeroNat
+  | `(tm| 𝓈($t:tm)) => do
+    let t ← parseATm cx t
+    pure <| .succNat t
   | `(tm| λ ($id:ident : $A:tm). $b:tm :: $B:tm) => do
     let A  ← parseATm cx A
     let b ← parseATm (cx ⬝ (id : A)) b
     let B ← parseATm (cx ⬝ (id : A)) B
     pure <| .lam id A b B
+  | `(tm| λ ($id:ident : $A:tm). $b:tm) => do
+    let A  ← parseATm cx A
+    let b ← parseATm (cx ⬝ (id : A)) b
+    --let B ← parseATm (cx ⬝ (id : A)) B
+    pure <| .lam id A b .empty
   | `(tm|  ($a:tm&$b:tm) :: $S:tm) => do
     let S  ← parseATm cx S
     let a  ← parseATm cx a
@@ -197,6 +206,10 @@ elab "#imltt " cx:ctxx "⊢" t:tm  " : " T:tm : command => do
 
 #imltt ε ⊢ ((λ(x : 𝒩). x :: 𝒩) 𝓏) : 𝒩
 
+#imltt ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ (IdA a) : A
+
+
+#imltt ε ⬝ (x : 𝒩) ⬝ (u : 𝟙) ⊢ (((λ(i:𝒩). (𝓈(i)&(((λ(T: 𝒰). (λ(t : T). t)) 𝒩) i)) :: (Σ(a:𝒩;𝒩))))) x : Σ(a:𝒩;𝒩)
 
 #imltt ε ⊢ ((λ(x : 𝟙). 𝟙 :: 𝒰) ⋆) : 𝒰
 example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
