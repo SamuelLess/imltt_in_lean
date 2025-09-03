@@ -2,6 +2,7 @@ import IMLTT.typed.JudgmentsAndRules
 import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
+import IMLTT.typed.checked.Grammar
 
 open Tm
 
@@ -322,3 +323,50 @@ theorem var_type' : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1)◃v(0) ∶ v
     · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
       · aesop
       · aesop
+
+-- redundancy of rules
+example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
+  IsEqualType.unit_form_eq hctx
+example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
+  IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq hctx
+
+-- define in one context
+-- Γ ⬝ 𝟙 ⊢ A type => Γ ⬝ 𝟙 ⬝ 𝒰 ⬝ v(0) ctx
+example : (ε ⬝ 𝟙 ⬝ 𝟙 ⬝ (((λ𝟙;𝒩)◃v(0))⌈⋆⌉₀) ⊢ indUnit ((λ𝟙;𝒩)◃v(0)) v(2) v(0) ∶ ((λ𝟙;𝒩)◃v(0))⌈v(2)⌉₀) := by
+  typecheck
+
+--Γ ⊢ ΣA;B type → (Γ ⊢ p ∶ ΣA;B) →  Γ ⊢ A.indSigma B (A⌊↑ₚidₚ⌋) (v(0)⌊↑ₚidₚ⌋) p  ∶ A :=
+example : (ε ⬝ 𝒰 ⊢ Σv(0);(Πv(1);𝒰) type) := by typecheck
+
+#check HasType.sigma_elim
+#eval (((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉ : Tm 3)
+
+/-
+A := 𝟙
+B := ((λ𝟙;𝒩)◃v(0))
+p := (⋆, 𝓏)
+C := ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))
+c := (v(0), v(1))
+-/
+def n := 0
+def A : Tm n := 𝟙
+def B : Tm (n+1) := ((λ𝟙;𝒩)◃v(0))
+def p : Tm n := (⋆&𝓏)
+def C : Tm (n+1) := ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))
+def c : Tm (n+2):= 𝓏
+
+#eval is_eq_type fuel (ε ⬝ A ⬝ B) 𝒩 (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
+
+#eval has_type fuel (ε ⬝ A ⬝ B) c (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
+
+example : (ε ⬝ (ΣA;B) ⊢ C type) := by typecheck
+example : (ε ⬝ A ⬝ B) ⊢ c ∶ (C⌈(ₛ↑ₚ↑ₚidₚ) ⋄ v(1)&v(0)⌉) := by typecheck
+example : (ε ⬝ A ⬝ B) ⊢ c ∶ 𝒩 := by typecheck
+
+example : ε ⊢ A.indSigma B C c p ∶ C⌈p⌉₀ := by typecheck
+
+example : ε ⊢
+  𝟙.indSigma ((λ𝟙;𝒩)◃v(0)) ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0)) 𝓏 (⋆&𝓏)
+      ∶ ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))⌈(⋆&𝓏)⌉₀ := by typecheck
+
+--example : (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ (Σv(1);v(1)) ⊢ .indSigma v(2) v(1) (v(2+1)) v(0+1) v(0) ∶ v(3)) := by typecheck
