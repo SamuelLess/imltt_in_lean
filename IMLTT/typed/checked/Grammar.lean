@@ -174,8 +174,6 @@ partial def parseACtx : (stx : TSyntax `ctxx) → TermElabM ((n : Nat) × ACtx n
     pure ⟨n' + 1, newCtx⟩
   | _ => throwUnsupportedSyntax
 
-
-
 elab "#imltt " cx:ctxx "⊢" t:tm : command => do
   let ⟨_, acontext⟩ ← liftTermElabM (parseACtx cx)
   let aterm ← liftTermElabM (parseATm acontext t)
@@ -208,10 +206,10 @@ elab "#imltt " cx:ctxx "⊢" t:tm  " : " T:tm : command => do
 
 #imltt ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ (IdA a) : A
 
-
 #imltt ε ⬝ (x : 𝒩) ⬝ (u : 𝟙) ⊢ (((λ(i:𝒩). (𝓈(i)&(((λ(T: 𝒰). (λ(t : T). t)) 𝒩) i)) :: (Σ(a:𝒩;𝒩))))) x : Σ(a:𝒩;𝒩)
 
 #imltt ε ⊢ ((λ(x : 𝟙). 𝟙 :: 𝒰) ⋆) : 𝒰
+
 example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
   have hεctx : ε ctx := IsCtx.empty
   have hLamPi : ε ⊢ (λ𝟙; 𝟙) ∶ Π𝟙;𝒰 := by
@@ -224,39 +222,16 @@ example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
     · exact star_unit
   · exact IsEqualType.univ_form_eq hεctx
 
---Γ ⊢ ΣA;B type → (Γ ⊢ p ∶ ΣA;B) →  Γ ⊢ A.indSigma B (A⌊↑ₚidₚ⌋) (v(0)⌊↑ₚidₚ⌋) p  ∶ A :=
+example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
+  exact ((has_type fuel _ _ _).toOption.get (by native_decide)).down
 
-#imltt ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (p : Σ(a:A;B)) ⊢ A : 𝒰
+syntax "typecheck" : tactic
 
--- syntax for judgments
-declare_syntax_cat judgment (behavior := both)
-syntax ctxx " ⊢ " tm " type" : judgment
-syntax ctxx " ⊢ " tm " ∶ " tm : judgment
+macro_rules
+| `(tactic| typecheck) => `(tactic| exact ((has_type fuel _ _ _).toOption.get (by native_decide)).down)
+macro_rules
+| `(tactic| typecheck) => `(tactic| exact ((is_type fuel _ _ _).toOption.get (by native_decide)).down)
 
-#check_failure `(judgment| ε ⊢ 𝟙 type)
+theorem my_test : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by typecheck
 
-syntax (name := judge_term) "%% " term " ⊢ " tm " type" : term
-
-@[term_elab judge_term]
-def judgeElab : TermElab := fun stx _ => do
-  /-let `((%% $cx:term ⊢ $t:tm type)) := stx
-    | throwUnsupportedSyntax
-  let ctx := parseCtx ctxx
-  let term := denoteTm t
-  match is_type fuel cx term with
-  | some proof => logInfo s!"'{ctxx} ⊢ {term} type' is valid by proof: {proof}"
-  | none => logInfo s!"'{ctxx} ⊢ {term} type' is not valid"-/
-  sorry
-
-syntax (name := notType) "(" term  " !: " term ")" : term
-
-@[term_elab notType]
-def elabNotType : TermElab := fun stx _ => do
-  let `(($tm:term !: $ty:term)) := stx
-    | throwUnsupportedSyntax
-  let unexpected ← elabType ty
-  let e ← elabTerm tm none
-  let eTy ← Meta.inferType e
-  if (← Meta.isDefEq eTy unexpected) then
-    throwErrorAt tm m!"Got unwanted type {eTy}"
-  else pure e
+theorem my_test' : ε ⬝ 𝒰 ⊢ 𝒰 type := by typecheck
