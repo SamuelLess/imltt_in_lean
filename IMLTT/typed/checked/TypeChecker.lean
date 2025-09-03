@@ -162,9 +162,23 @@ mutual
       let is_eq_T_T' ← is_eq_type f (Γ ⬝ T) (T⌊↑ₚidₚ⌋) T'
       have := IsEqualTerm.var_eq is_type_T.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_T_T'.down
-    | f+1, Γ ⬝ T, v(i), v(j), T' => do
-      -- TODO: build this case
-      .error s!"is_eq_term: weakening is unsupported v({i}) ≡ v({j}) ∶ {T'}"
+    | f+1, Γ ⬝ T, v(⟨i+1,hi⟩), v(⟨j+1,hj⟩), T' => do
+      if hieqj : i == j then
+        let is_type_T ← is_type f _ Γ T
+        let ⟨Tvi, htvi⟩ ← infer_type f Γ v(⟨i, by omega⟩)
+        let is_eq_Tvi_T ← is_eq_type f (Γ ⬝ T) (Tvi⌊↑ₚidₚ⌋) T'
+        have t : Γ ⬝ T ⊢ v(⟨i+1, hi⟩) ≡ v(⟨j+1, hj⟩) ∶ T' := by
+          have h_eq : i = j := by exact beq_iff_eq.mp hieqj
+          simp only [h_eq.symm]
+          rw [←Fin.succ_mk]
+          apply IsEqualTerm.ty_conv_eq (A := Tvi⌊↑ₚidₚ⌋) (B := T')
+          apply IsEqualTerm.weak_eq (Γ := Γ) (A := Tvi) (B := T) (i := ⟨i, _⟩)
+          · exact defeq_refl_term htvi
+          · exact is_type_T.down
+          · exact is_eq_Tvi_T.down
+        return .up t
+      else
+        .error s!"is_eq_term: two different variables cannot be equal v({i}) ≡ v({j}) ∶ {T'}"
     | f+1, Γ, (λA;b)◃x, t, T => do
       let ⟨Π_;B, _⟩ ← infer_type f Γ (λA;b)
         | .error s!"is_eq_term: could not infer type of {λA;b}"
@@ -296,7 +310,9 @@ def ret_id : Tm n := (λ𝒰;(λv(0);v(0)))
 /-- info: success -/
 #guard_msgs in
 #eval has_type fuel (ε ⬝ 𝒰) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃𝓏) 𝒩
-#eval has_type fuel (ε ⬝ 𝒰 ⬝ Πv(0);v(1)) ((v(0) ◃ v(1))) v(2)
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)) ((v(1) ◃ v(0))) v(2)
 
 /-
 Γ ⬝ A ⬝ B ⬝ C ⊢ (λ(ΠB;C);(λ(ΠA;B);(λA; v(2)◃(v(1)◃v(0)))) : ΠA;C
