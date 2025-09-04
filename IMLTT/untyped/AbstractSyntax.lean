@@ -1,3 +1,5 @@
+import Lean.ToExpr
+
 inductive Tm : Nat → Type where
   -- 'types'
   | unit : Tm n
@@ -21,10 +23,12 @@ inductive Tm : Nat → Type where
   | indNat : Tm (n + 1) → Tm n → Tm (n + 2) → Tm n → Tm n
   | refl : Tm n → Tm n → Tm n
   | j : Tm n → Tm (n + 3) → Tm (n + 1) → Tm n → Tm n → Tm n → Tm n
+deriving BEq, Repr, Lean.ToExpr
 
 inductive Ctx : Nat → Type where
   | empty : Ctx 0
   | extend : Ctx n → Tm n → Ctx (n + 1)
+deriving BEq, Repr, Lean.ToExpr
 
 -- types
 notation:max "𝟙" => Tm.unit

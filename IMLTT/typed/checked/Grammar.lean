@@ -1,7 +1,8 @@
 import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.checked.TypeChecker
+import Qq
 
-open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command
+open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq
 
 -- syntax for inductive Tm type
 declare_syntax_cat tm (behavior := both)
@@ -102,45 +103,45 @@ def ACtx.toCtx {n} : ACtx n → Ctx n
   | .empty => Ctx.empty
   | .extend cx _ ty => Ctx.extend (ACtx.toCtx cx) (ty.toTm)
 
-partial def parseATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
-  | `(tm| ($t:tm)) => parseATm cx t
+partial def elabATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
+  | `(tm| ($t:tm)) => elabATm cx t
   -- types
   | `(tm| 𝟘) => pure .empty
   | `(tm| 𝟙) => pure .unit
   | `(tm| 𝒩) => pure .nat
   | `(tm| 𝒰) => pure .univ
   | `(tm| Π ($id:ident : $A:tm; $B:tm)) => do
-    let A  ← parseATm cx A
-    let B ← parseATm (cx ⬝ (id : A)) B
+    let A  ← elabATm cx A
+    let B ← elabATm (cx ⬝ (id : A)) B
     pure <| .pi id A B
   | `(tm| Σ ($id:ident : $A:tm; $B:tm)) => do
-    let A  ← parseATm cx A
-    let B ← parseATm (cx ⬝ (id : A)) B
+    let A  ← elabATm cx A
+    let B ← elabATm (cx ⬝ (id : A)) B
     pure <| .sigma id A B
   -- terms
   | `(tm| ⋆) => pure .tt
   | `(tm| 𝓏) => pure .zeroNat
   | `(tm| 𝓈($t:tm)) => do
-    let t ← parseATm cx t
+    let t ← elabATm cx t
     pure <| .succNat t
   | `(tm| λ ($id:ident : $A:tm). $b:tm :: $B:tm) => do
-    let A  ← parseATm cx A
-    let b ← parseATm (cx ⬝ (id : A)) b
-    let B ← parseATm (cx ⬝ (id : A)) B
+    let A  ← elabATm cx A
+    let b ← elabATm (cx ⬝ (id : A)) b
+    let B ← elabATm (cx ⬝ (id : A)) B
     pure <| .lam id A b B
   | `(tm| λ ($id:ident : $A:tm). $b:tm) => do
-    let A  ← parseATm cx A
-    let b ← parseATm (cx ⬝ (id : A)) b
+    let A  ← elabATm cx A
+    let b ← elabATm (cx ⬝ (id : A)) b
     --let B ← parseATm (cx ⬝ (id : A)) B
     pure <| .lam id A b .empty
   | `(tm|  ($a:tm&$b:tm) :: $S:tm) => do
-    let S  ← parseATm cx S
-    let a  ← parseATm cx a
-    let b  ← parseATm cx b
+    let S  ← elabATm cx S
+    let a  ← elabATm cx a
+    let b  ← elabATm cx b
     pure <| .pairSigma a b S
   | `(tm| $f:tm $a:tm) => do
-    let f ← parseATm cx f
-    let a ← parseATm cx a
+    let f ← elabATm cx f
+    let a ← elabATm cx a
     pure <| .app f a
   | `(tm| $id:ident) => do
     match n with
@@ -165,18 +166,18 @@ syntax ctxx " ⬝ " " ( " ident " : " tm  " ) " : ctxx
 
 #check (ε ⬝ 𝒩 : Ctx 1)
 
-partial def parseACtx : (stx : TSyntax `ctxx) → TermElabM ((n : Nat) × ACtx n)
+partial def elabACtx : (stx : TSyntax `ctxx) → TermElabM ((n : Nat) × ACtx n)
   | `(ctxx|ε) => pure ⟨0, .empty⟩
   | `(ctxx|$cx:ctxx ⬝ ($id:ident : $ty:tm)) => do
-    let ⟨n', cx'⟩ ← parseACtx cx
-    let nty ← parseATm cx' ty
+    let ⟨n', cx'⟩ ← elabACtx cx
+    let nty ← elabATm cx' ty
     let newCtx := ACtx.extend cx' id nty
     pure ⟨n' + 1, newCtx⟩
   | _ => throwUnsupportedSyntax
 
 elab "#imltt " cx:ctxx "⊢" t:tm : command => do
-  let ⟨_, acontext⟩ ← liftTermElabM (parseACtx cx)
-  let aterm ← liftTermElabM (parseATm acontext t)
+  let ⟨_, acontext⟩ ← liftTermElabM (elabACtx cx)
+  let aterm ← liftTermElabM (elabATm acontext t)
   logInfo s!"Context: {acontext.toList.map (·.2.1)|>.reverse}, term: {aterm.toTm}"
   let res := is_type fuel _ (ACtx.toCtx acontext) aterm.toTm
   match res with
@@ -189,9 +190,9 @@ elab "#imltt " cx:ctxx "⊢" t:tm : command => do
 #imltt ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢ A
 
 elab "#imltt " cx:ctxx "⊢" t:tm  " : " T:tm : command => do
-  let ⟨_, acontext⟩ ← liftTermElabM (parseACtx cx)
-  let aterm ← liftTermElabM (parseATm acontext t)
-  let atype ← liftTermElabM (parseATm acontext T)
+  let ⟨_, acontext⟩ ← liftTermElabM (elabACtx cx)
+  let aterm ← liftTermElabM (elabATm acontext t)
+  let atype ← liftTermElabM (elabATm acontext T)
   let ctxlist := acontext.toList.map (·.2.1)|>.reverse
   logInfo s!"Context: {ctxlist}, term: {aterm.toTm}"
   let res := has_type fuel (ACtx.toCtx acontext) aterm.toTm atype.toTm
@@ -235,3 +236,21 @@ macro_rules
 theorem my_test : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by typecheck
 
 theorem my_test' : ε ⬝ 𝒰 ⊢ 𝒰 type := by typecheck
+
+syntax ">> " ctxx "⊢" tm "∶" tm " <<" : term
+
+elab_rules : term
+  | `(>> $cx:ctxx ⊢ $t:tm ∶ $T:tm <<) => do
+    let ⟨n, acontext⟩ ← elabACtx cx
+    let aterm ← elabATm acontext t
+    let atype ← elabATm acontext T
+    let cxE := Lean.toExpr (ACtx.toCtx acontext)
+    let tmE := Lean.toExpr (aterm.toTm)
+    let tyE := Lean.toExpr (atype.toTm)
+    return mkApp4 (Expr.const ``HasType []) (Lean.Expr.lit <| .natVal n) cxE tmE tyE
+    --return Lean.toExpr (@HasType n (ACtx.toCtx acontext) (aterm.toTm) (atype.toTm))
+    -- does not work because HasType is prop
+
+theorem unit_univ : >> ε ⊢ ((λ(x : 𝟙). 𝟙) ⋆) ∶ 𝒰 << := by typecheck
+
+#check unit_univ
