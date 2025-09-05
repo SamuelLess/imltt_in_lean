@@ -24,6 +24,7 @@ syntax "λ " "(" ident " : " tm  ")" ". " tm " :: " tm : tm
 syntax "λ " "(" ident " : " tm  ")" ". " tm : tm
 syntax "(" tm "&" tm ")" "::" tm : tm
 syntax tm tm : tm
+syntax "ind𝟙" tm tm tm : tm
 syntax "(" tm ")" : tm
 
 #check_failure `(tm|𝟙 → 𝟙)
@@ -97,7 +98,7 @@ theorem ACtx.length {n} (cx : ACtx n) : cx.toList.length = n := by
   | empty => simp only [toList, List.length_nil]
   | extend cx' id ty ih => simp only [toList, List.length_cons, ih]
 
-notation cx " ⬝ " "(" id " : " ty ")" => ACtx.extend cx id ty
+notation cx " a⬝ " "(" id " : " ty ")" => ACtx.extend cx id ty
 
 def ACtx.toCtx {n} : ACtx n → Ctx n
   | .empty => Ctx.empty
@@ -112,11 +113,11 @@ partial def elabATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
   | `(tm| 𝒰) => pure .univ
   | `(tm| Π ($id:ident : $A:tm; $B:tm)) => do
     let A  ← elabATm cx A
-    let B ← elabATm (cx ⬝ (id : A)) B
+    let B ← elabATm (cx a⬝ (id : A)) B
     pure <| .pi id A B
   | `(tm| Σ ($id:ident : $A:tm; $B:tm)) => do
     let A  ← elabATm cx A
-    let B ← elabATm (cx ⬝ (id : A)) B
+    let B ← elabATm (cx a⬝ (id : A)) B
     pure <| .sigma id A B
   -- terms
   | `(tm| ⋆) => pure .tt
@@ -126,13 +127,13 @@ partial def elabATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
     pure <| .succNat t
   | `(tm| λ ($id:ident : $A:tm). $b:tm :: $B:tm) => do
     let A  ← elabATm cx A
-    let b ← elabATm (cx ⬝ (id : A)) b
-    let B ← elabATm (cx ⬝ (id : A)) B
+    let b ← elabATm (cx a⬝ (id : A)) b
+    let B ← elabATm (cx a⬝ (id : A)) B
     pure <| .lam id A b B
   | `(tm| λ ($id:ident : $A:tm). $b:tm) => do
     let A  ← elabATm cx A
-    let b ← elabATm (cx ⬝ (id : A)) b
-    --let B ← parseATm (cx ⬝ (id : A)) B
+    let b ← elabATm (cx a⬝ (id : A)) b
+    --let B ← parseATm (cx a⬝ (id : A)) B
     pure <| .lam id A b .empty
   | `(tm|  ($a:tm&$b:tm) :: $S:tm) => do
     let S  ← elabATm cx S
@@ -251,6 +252,23 @@ elab_rules : term
     --return Lean.toExpr (@HasType n (ACtx.toCtx acontext) (aterm.toTm) (atype.toTm))
     -- does not work because HasType is prop
 
-theorem unit_univ : >> ε ⊢ ((λ(x : 𝟙). 𝟙) ⋆) ∶ 𝒰 << := by typecheck
+theorem id_star_unit : >> ε ⬝ (s : 𝟙) ⊢ ((λ(x : 𝟙). x) s) ∶ 𝟙 << := by typecheck
 
-#check unit_univ
+example : >> ε ⬝ (s : 𝟙) ⊢ (λ(x : 𝟙). x) ∶ Π(s : 𝟙;𝟙) << := by typecheck
+
+--example : >> ε ⬝ (s : 𝟙) ⬝ (A : 𝒰) ⬝ (a : A⌈s⌉₀) ⊢ (λ(x : 𝟙). x) ∶ Π(s : 𝟙;𝟙) << := by typecheck
+
+#print id_star_unit
+
+--Γ ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢ (λ(g : ΠB;C);(λ(f : ΠA;B);(λ(x : A); g◃(f◃x))) : ΠA;C
+theorem comp :
+   >> ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⬝ (g' : Π(b : B;C)) ⬝ (f' : Π(a : A;B)) ⊢
+    ((λ(g : Π(b : B;C)) . (λ(f : Π(a : A;B)) . (λ(x : A) . g (f x)))) g') f'∶  (Π(a : A;C)) << := by
+  typecheck
+
+/-
+--Γ ⊢ ΣA;B type → (Γ ⊢ p ∶ ΣA;B) →  Γ ⊢ A.indSigma B (A⌊↑ₚidₚ⌋) (v(0)⌊↑ₚidₚ⌋) p  ∶ A :=
+theorem proj1 :
+  >> ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (p : Σ(a : A;B)) ⊢ indΣ A B (A) () << := by
+  typecheck
+-/
