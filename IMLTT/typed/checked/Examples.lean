@@ -330,26 +330,8 @@ example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
 example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
   IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq hctx
 
-example : (ε ⬝ 𝟙 ⬝ 𝒰 ctx) → (ε ⬝ 𝟙 ⬝ 𝒰 ⊢ v(0)⌈v(2)⌉₀ type) := by
-  intro hctx
-  typecheck
-
-example : (ε ⬝ 𝟙 ⬝ 𝒰 ctx) → (ε ⬝ 𝟙 ⬝ 𝒰 ⊢ v(0)⌈v(2)⌉₀ type) := by
-  intro hctx
-  typecheck
-
-#eval (v(2)⌈⋆⌉₀ : Tm 3)
-
-
---Γ ⬝ 𝟙 ⊢ A type → (Γ ⊢ a ∶ A⌈⋆⌉₀) → (Γ ⊢ b ∶ 𝟙) → Γ ⊢ A.indUnit b a ∶ A⌈b⌉₀
-
-example : (ε ⬝ 𝟙 ⬝ 𝒰 ⊢ v(0) type) := by typecheck
-example : (ε ⬝ 𝟙 ⬝ 𝒰 ⊢ v(0) type) := by typecheck
-example : (ε ⬝ 𝟙 ⊢ (λ𝟙;𝒩)◃v(0) type) := by typecheck
-
 -- define in one context
 -- Γ ⬝ 𝟙 ⊢ A type => Γ ⬝ 𝟙 ⬝ 𝒰 ⬝ v(0) ctx
-#eval (v(2)⌈⋆⌉₀ : Tm 3)
 example : (ε ⬝ 𝟙 ⬝ 𝟙 ⬝ (((λ𝟙;𝒩)◃v(0))⌈⋆⌉₀) ⊢ indUnit ((λ𝟙;𝒩)◃v(0)) v(2) v(0) ∶ ((λ𝟙;𝒩)◃v(0))⌈v(2)⌉₀) := by
   typecheck
 
@@ -369,7 +351,7 @@ c := (v(0), v(1))
 def n := 0
 def A : Tm n := 𝟙
 def B : Tm (n+1) := ((λ𝟙;𝒩)◃v(0))
-def p : Tm n := (⋆& 𝓏)
+def p : Tm n := (⋆&𝓏)
 def C : Tm (n+1) := ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))
 def c : Tm (n+2):= 𝓏
 
@@ -380,6 +362,8 @@ def c : Tm (n+2):= 𝓏
 example : (ε ⬝ (ΣA;B) ⊢ C type) := by typecheck
 example : (ε ⬝ A ⬝ B) ⊢ c ∶ (C⌈(ₛ↑ₚ↑ₚidₚ) ⋄ v(1)&v(0)⌉) := by typecheck
 example : (ε ⬝ A ⬝ B) ⊢ c ∶ 𝒩 := by typecheck
+
+example : ε ⊢ A.indSigma B C c p ∶ C⌈p⌉₀ := by typecheck
 
 example : ε ⊢
   𝟙.indSigma ((λ𝟙;𝒩)◃v(0)) ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0)) 𝓏 (⋆&𝓏)
