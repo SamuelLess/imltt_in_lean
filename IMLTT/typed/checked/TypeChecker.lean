@@ -256,7 +256,17 @@ mutual
       else
         .error s!"is_eq_term: two different variables cannot defeq v({i}) ≡ v({j}) ∶ {T'}"
     -- computation rules
-    -- TODO: unit_comp
+    | f+1, Γ, .indUnit A ⋆ a, a', A' => do
+      return .up <| by
+        have is_eq_term_a'_a := (← is_eq_term f Γ a' a (A⌈⋆⌉₀))
+        apply IsEqualTerm.ty_conv_eq (B:=A')
+        apply IsEqualTerm.term_symm
+        apply IsEqualTerm.term_trans is_eq_term_a'_a.down
+        · apply IsEqualTerm.term_symm
+          apply IsEqualTerm.unit_comp
+          · exact (← is_type f _ (Γ ⬝ 𝟙) A).down
+          · exact (← has_type f Γ a (A⌈⋆⌉₀)).down
+        · exact (← is_eq_type f Γ (A⌈⋆⌉₀) A').down
     | f+1, Γ, (λA;b)◃x, t, T => do
       let ⟨Π_;B, _⟩ ← infer_type f Γ (λA;b)
         | .error s!"is_eq_term: could not infer type of {λA;b}"
@@ -275,7 +285,14 @@ mutual
     | f+1, Γ, ⋆, ⋆, 𝟙 => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
-    -- TODO: unit_elim_eq
+    | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=A⌈b⌉₀) (B:=Asubst)
+        · apply IsEqualTerm.unit_elim_eq
+          · exact (← is_eq_type f (Γ ⬝ 𝟙) A A').down
+          · exact (← is_eq_term f Γ a a' (A⌈⋆⌉₀)).down
+          · exact (← is_eq_term f Γ b b' 𝟙).down
+        · exact (← is_eq_type f Γ (A⌈b⌉₀) Asubst).down
     -- TODO: empty_elim_eq
     -- TODO: pi_intro_eq
     -- TODO: pi_elim_eq
