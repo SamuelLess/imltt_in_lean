@@ -165,7 +165,7 @@ example (Γ : Ctx n) : ∀ a : Tm n, (Γ ⊢ a ∶ A) → (Γ ⬝ A ⊢ a⌊↑�
     exact boundary_term_type ha
 
 
-theorem idpi : (Γ ctx) -> Γ ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 := by
+theorem idpi'' : (Γ ctx) -> Γ ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 := by
   intro hΓctx
   apply HasType.pi_intro
   apply HasType.var
@@ -235,7 +235,7 @@ theorem weaken_from_n : (↑₁n↬n) = ↑ₚidₚ := by
   split <;> simp
 
 theorem intro_ctx_type {n : Nat} (Γ : Ctx n) :
-    (Γ ctx) -> (ε ⊢ T type) -> (Γ ⊢  T⌊shift n⌋ type) := by
+    (Γ ctx) -> (ε ⊢ T type) → (Γ ⊢  T⌊shift n⌋ type) := by
   intro hΓctx hεTtype
   induction Γ with
   | empty => simpa
@@ -247,7 +247,7 @@ theorem intro_ctx_type {n : Nat} (Γ : Ctx n) :
     exact weakening_type (ih hΓ'ctx) hΓ'Atype
 
 theorem intro_ctx (Γ : Ctx n) :
-    (Γ ctx) -> (ε ⊢ t ∶ T) -> (Γ ⊢ (t⌊shift n⌋) ∶ T⌊shift n⌋) := by
+    (Γ ctx) -> (ε ⊢ t ∶ T) → (Γ ⊢ (t⌊shift n⌋) ∶ T⌊shift n⌋) := by
   intro hΓctx htT
   induction Γ with
   | empty => simpa

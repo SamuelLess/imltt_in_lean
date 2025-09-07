@@ -293,11 +293,45 @@ mutual
           · exact (← is_eq_term f Γ a a' (A⌈⋆⌉₀)).down
           · exact (← is_eq_term f Γ b b' 𝟙).down
         · exact (← is_eq_type f Γ (A⌈b⌉₀) Asubst).down
-    -- TODO: empty_elim_eq
-    -- TODO: pi_intro_eq
-    -- TODO: pi_elim_eq
-    -- TODO: sigma_intro_eq
-    -- TODO: sigma_elim_eq
+    | f+1, Γ, .indEmpty A b, .indEmpty A' b', Asubst => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=A⌈b⌉₀) (B:=Asubst)
+        · apply IsEqualTerm.empty_elim_eq
+          · exact (← is_eq_type f (Γ ⬝ 𝟘) A A').down
+          · exact (← is_eq_term f Γ b b' 𝟘).down
+        · exact (← is_eq_type f Γ (A⌈b⌉₀) Asubst).down
+    | f+1, Γ, λA;b, λA';b', ΠT;T' => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=ΠA;T') (B:=ΠT;T')
+        · apply IsEqualTerm.pi_intro_eq
+          · exact (← is_eq_term f (Γ ⬝ A) b b' T').down
+          · exact (← is_eq_type f Γ A A').down
+        · exact (← is_eq_type f Γ (ΠA;T') (ΠT;T')).down
+    | f+1, Γ, func◃a, func'◃a', T => do
+      let ⟨ΠA;B, _⟩ ← infer_type f Γ (func◃a)
+        | .error s!"is_eq_term: could not infer type of {func◃a}"
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=B⌈a⌉₀) (B:=T)
+        · apply IsEqualTerm.pi_elim_eq
+          · exact (← is_eq_term f Γ func func' (ΠA;B)).down
+          · exact (← is_eq_term f Γ a a' A).down
+        · exact (← is_eq_type f Γ (B⌈a⌉₀) T).down
+    | f+1, Γ, a&b, a'&b', ΣA;B => do
+      return .up <| by
+        apply IsEqualTerm.sigma_intro_eq
+        · exact (← is_eq_term f Γ a a' A).down
+        · exact (← is_eq_term f Γ b b' (B⌈a⌉₀)).down
+        · exact (← is_type f _ (Γ ⬝ A) B).down
+    | f+1, Γ, .indSigma A B C c p, .indSigma A' B' C' c' p', T => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=C⌈p⌉₀) (B:=T)
+        · apply IsEqualTerm.sigma_elim_eq
+          · exact (← is_eq_type f (Γ ⬝ ΣA;B) C C').down
+          · exact (← is_eq_term f (Γ ⬝ A ⬝ B) c c' (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)).down
+          · exact (← is_eq_type f Γ A A').down
+          · exact (← is_eq_type f (Γ ⬝ A) B B').down
+          · exact (← is_eq_term f Γ p p' (ΣA;B)).down
+        · exact (← is_eq_type f Γ (C⌈p⌉₀) T).down
     -- TODO: nat_zero_intro_eq
     -- TODO: nat_succ_intro_eq
     -- TODO: nat_elim_eq
