@@ -3,11 +3,12 @@ import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
--- change: 3
+set_option profiler true
+set_option profiler.threshold 100 -- Optional: only show tactics that take longer than 100ms
 
 def fuel := 200 -- proof go brrr 🚗
 
-def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PLift (Γsome ⊢ T type)))
+partial def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PLift (Γsome ⊢ T type)))
     -> (Γ : Ctx n) -> Except String (PLift (Γ ctx))
   | _, ε => pure <| .up IsCtx.empty
   | my_is_type, Ctx.extend Γ' T' => do
@@ -17,7 +18,7 @@ def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PL
 
 set_option maxHeartbeats 500000
 mutual
-  def is_type : (fuel : Nat) -> (n : Nat)
+  partial def is_type : (fuel : Nat) -> (n : Nat)
       -> (Γ : Ctx n) → (T : Tm n) → Except String (PLift (Γ ⊢ T type))
     | 0, _, _, _ => .error "is_type: out of fuel"
     | f+1, _, Γ, 𝟘 => do
@@ -48,9 +49,8 @@ mutual
     | f+1, _, Γ, A => do
       let has_type_A ← has_type f Γ A 𝒰
       return .up <| IsType.univ_elim has_type_A.down
-  termination_by structural f => f
 
-  def has_type : (fuel : Nat) → (Γ : Ctx n) →
+  partial def has_type : (fuel : Nat) → (Γ : Ctx n) →
       (t : Tm n) → (T : Tm n) → Except String (PLift (Γ ⊢ t ∶ T))
     | 0, _, _, _ => .error "has_type: out of fuel"
     -- variables
@@ -188,9 +188,8 @@ mutual
         · exact (← has_type f Γ p (a ≃[A] a')).down
         · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a⋄ a'⋄ p⌉) B').down
     | _, _, t, T => .error s!"has_type: unsupported pattern {t} ∶ {T}"
-  termination_by structural f => f
 
-  def is_eq_type : (fuel : Nat) -> (Γ : Ctx n) → (A : Tm n) → (B : Tm n) →
+  partial def is_eq_type : (fuel : Nat) -> (Γ : Ctx n) → (A : Tm n) → (B : Tm n) →
       Except String (PLift (Γ ⊢ A ≡ B type))
     | 0, _, A, B => .error s!"is_eq_type: out of fuel {A} ≡ {B}"
     -- congruence (formation) rules
@@ -231,10 +230,8 @@ mutual
     | f+1, Γ, T, T' => do
       let is_eq_symm ← is_eq_type f Γ T' T
       return .up <| IsEqualType.type_symm is_eq_symm.down
-    --| _, _, A, B => .error s!"is_eq_type: unsupported pattern for either side {A} ≡ {B}"
-  termination_by structural f => f
 
-  def is_eq_term : (fuel: Nat) -> (Γ : Ctx n) ->
+  partial def is_eq_term : (fuel: Nat) -> (Γ : Ctx n) ->
       (a : Tm n) → (a' : Tm n) → (A : Tm n) → Except String (PLift (Γ ⊢ a ≡ a' ∶ A))
     | 0, Γ, a, a', A =>
       .error s!"is_eq_term: out of fule with {repr Γ} ⊢ {a} ≡ {a'} : {A}"
@@ -260,24 +257,21 @@ mutual
         .error s!"is_eq_term: two different variables cannot defeq v({i}) ≡ v({j}) ∶ {T'}"
     -- computation rules
     | f+1, Γ, .indUnit A ⋆ a, a', A' => do
-      return .up <| by
-        have is_eq_term_a'_a := (← is_eq_term f Γ a' a (A⌈⋆⌉₀))
-        apply IsEqualTerm.ty_conv_eq (B:=A')
-        apply IsEqualTerm.term_symm
-        apply IsEqualTerm.term_trans is_eq_term_a'_a.down
-        · apply IsEqualTerm.term_symm
-          apply IsEqualTerm.unit_comp
-          · exact (← is_type f _ (Γ ⬝ 𝟙) A).down
-          · exact (← has_type f Γ a (A⌈⋆⌉₀)).down
-        · exact (← is_eq_type f Γ (A⌈⋆⌉₀) A').down
+      let is_type_A ← is_type f _ (Γ ⬝ 𝟙) A
+      let has_type_a ← has_type f Γ a (A⌈⋆⌉₀)
+      let is_eq_term_a_a' ← is_eq_term f Γ a a' (A⌈⋆⌉₀)
+      let is_eq_type_A_A' ← is_eq_type f Γ (A⌈⋆⌉₀) A'
+      have unit_comp := IsEqualTerm.unit_comp is_type_A.down has_type_a.down
+      have term_trans := IsEqualTerm.term_trans unit_comp is_eq_term_a_a'.down
+      return .up <| IsEqualTerm.ty_conv_eq term_trans is_eq_type_A_A'.down
     | f+1, Γ, (λA;b)◃x, t, T => do
       let ⟨Π_;B, _⟩ ← infer_type f Γ (λA;b)
         | .error s!"is_eq_term: could not infer type of {λA;b}"
       let has_type_x ← has_type f Γ x A
       let has_type_b ← has_type f (Γ ⬝ A) b B
-      have pi_comp := IsEqualTerm.pi_comp has_type_b.down has_type_x.down
       let is_eq_term_b ← is_eq_term f Γ (b⌈x⌉₀) t (B⌈x⌉₀)
       let is_eq_type_B_T ← is_eq_type f Γ (B⌈x⌉₀) T
+      have pi_comp := IsEqualTerm.pi_comp has_type_b.down has_type_x.down
       have := IsEqualTerm.term_trans pi_comp is_eq_term_b.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_B_T.down
     | f+1, Γ, .indSigma A B C c (a&b), t, T => do
@@ -312,7 +306,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
     -- TODO: add J computation rule here
     -- congruence rules
-    /-| f+1, Γ, ⋆, ⋆, 𝟙 => do
+    | f+1, Γ, ⋆, ⋆, 𝟙 => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
     | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
@@ -394,7 +388,7 @@ mutual
           · exact (← is_eq_term f Γ a₁ a₂ A).down
           · exact (← is_eq_term f Γ a₃ a₄ A').down
           · exact (← is_eq_term f Γ p p' (a₁ ≃[A] a₃)).down
-        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down-/
+        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down
     -- univ rules
     | f+1, Γ, 𝟙, 𝟙, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ 𝒰 Univ
@@ -435,9 +429,8 @@ mutual
     | f+1, Γ, a, a', A => do
       let is_eq_symm ← is_eq_term f Γ a' a A
       return .up <| IsEqualTerm.term_symm is_eq_symm.down
-  termination_by structural f => f
 
-  def infer_type : (fuel : Nat) → (Γ : Ctx n) → (t : Tm n) → Except String (Σ' T, Γ ⊢ t ∶ T)
+  partial def infer_type : (fuel : Nat) → (Γ : Ctx n) → (t : Tm n) → Except String (Σ' T, Γ ⊢ t ∶ T)
     | 0, _, _ => .error "infer_type: out of fuel"
     | f+1, Γ, ⋆ => do
       let ctx_ok ← is_ctx (is_type f) Γ
@@ -480,7 +473,6 @@ mutual
       let has_type_a ← has_type f Γ a A
       return .mk (B⌈a⌉₀) <| HasType.pi_elim hg has_type_a.down
     | f+1, _, t => .error s!"infer_type: unsupported pattern {t}"
-  termination_by structural f => f
 end
 
 #exit
