@@ -3,6 +3,8 @@ import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
+-- change: 3
+
 def fuel := 200 -- proof go brrr 🚗
 
 def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PLift (Γsome ⊢ T type)))
@@ -13,6 +15,7 @@ def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PL
     let t_ok : PLift (Γ' ⊢ T' type) ← my_is_type _ Γ' T'
     return .up <| IsCtx.extend ctx_ok.down t_ok.down
 
+set_option maxHeartbeats 500000
 mutual
   def is_type : (fuel : Nat) -> (n : Nat)
       -> (Γ : Ctx n) → (T : Tm n) → Except String (PLift (Γ ⊢ T type))
@@ -57,8 +60,8 @@ mutual
       let is_eq_type_T_T' ← is_eq_type f (Γ ⬝ T) (T⌊↑ₚidₚ⌋) T'
       have has_type_T : (Γ ⬝ T) ⊢ v(0) ∶ (T⌊↑ₚidₚ⌋) := HasType.var is_type_T.down
       return .up <| HasType.ty_conv has_type_T is_eq_type_T_T'.down
-    | f+1, Γ ⬝ T, v(⟨i+1,_⟩), T' => do
-      let ⟨T'', h⟩ ← infer_type f Γ v(.mk i (by omega))
+    | f+1, Γ ⬝ T, v(⟨i+1, hi⟩), T' => do
+      let ⟨T'', h⟩ ← infer_type f Γ v(.mk i (Nat.succ_lt_succ_iff.mp hi))
       let is_type_T ← is_type f _ Γ T
       let is_eq_type_T ← is_eq_type f (Γ ⬝ T) (T''⌊↑ₚidₚ⌋) T'
       let weak := HasType.weak h is_type_T.down
@@ -243,7 +246,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_T_T'.down
     | f+1, Γ ⬝ T, v(⟨i+1,hi⟩), v(⟨j+1,hj⟩), T' => do
       if hieqj : i == j then
-        let ⟨Tvi, htvi⟩ ← infer_type f Γ v(⟨i, by omega⟩)
+        let ⟨Tvi, htvi⟩ ← infer_type f Γ v(⟨i, (Nat.succ_lt_succ_iff.mp hi)⟩)
         have t : Γ ⬝ T ⊢ v(⟨i+1, hi⟩) ≡ v(⟨j+1, hj⟩) ∶ T' := by
           simp only [beq_iff_eq.mp hieqj |>.symm]
           rw [←Fin.succ_mk]
@@ -277,12 +280,39 @@ mutual
       let is_eq_type_B_T ← is_eq_type f Γ (B⌈x⌉₀) T
       have := IsEqualTerm.term_trans pi_comp is_eq_term_b.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_B_T.down
-    -- TODO: sigma_comp
-    -- TODO: nat_zero_comp
-    -- TODO: nat_succ_comp
-    -- TODO: iden_comp
+    | f+1, Γ, .indSigma A B C c (a&b), t, T => do
+      let has_type_a ← has_type f Γ a A
+      let has_type_b ← has_type f Γ b (B⌈a⌉₀)
+      let is_type_C ← is_type f _ (Γ ⬝ ΣA;B) C
+      let has_type_c ← has_type f (Γ ⬝ A ⬝ B) c (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
+      have sigma_comp := IsEqualTerm.sigma_comp is_type_C.down has_type_c.down has_type_a.down has_type_b.down
+      let is_eq_term_c ← is_eq_term f Γ (c⌈(ₛidₚ)⋄ a⋄ b⌉) t (C⌈a&b⌉₀)
+      let is_eq_type_C_T ← is_eq_type f Γ (C⌈a&b⌉₀) T
+      have := IsEqualTerm.term_trans sigma_comp is_eq_term_c.down
+      return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_C_T.down
+    | f+1, Γ, .indNat A z s 𝓏, t, T => do
+      let is_type_A ← is_type f _ (Γ ⬝ 𝒩) A
+      let has_type_z ← has_type f Γ z (A⌈𝓏⌉₀)
+      let has_type_s ← has_type f (Γ ⬝ 𝒩 ⬝ A) s (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)
+      let has_type_zero ← has_type f Γ 𝓏 𝒩
+      have nat_zero_comp := IsEqualTerm.nat_zero_comp is_type_A.down has_type_z.down has_type_s.down has_type_zero.down
+      let is_eq_term_z ← is_eq_term f Γ z t (A⌈𝓏⌉₀)
+      let is_eq_type_A_T ← is_eq_type f Γ (A⌈𝓏⌉₀) T
+      have := IsEqualTerm.term_trans nat_zero_comp is_eq_term_z.down
+      return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
+    | f+1, Γ, .indNat A z s 𝓈(n), t, T => do
+      let is_type_A ← is_type f _ (Γ ⬝ 𝒩) A
+      let has_type_z ← has_type f Γ z (A⌈𝓏⌉₀)
+      let has_type_s ← has_type f (Γ ⬝ 𝒩 ⬝ A) s (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)
+      let has_type_n ← has_type f Γ n 𝒩
+      have nat_succ_comp := IsEqualTerm.nat_succ_comp is_type_A.down has_type_z.down has_type_s.down has_type_n.down
+      let is_eq_term_s ← is_eq_term f Γ (s⌈(ₛidₚ)⋄ n⋄ (.indNat A z s n)⌉) t (A⌈𝓈(n)⌉₀)
+      let is_eq_type_A_T ← is_eq_type f Γ (A⌈𝓈(n)⌉₀) T
+      have := IsEqualTerm.term_trans nat_succ_comp is_eq_term_s.down
+      return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
+    -- TODO: add J computation rule here
     -- congruence rules
-    | f+1, Γ, ⋆, ⋆, 𝟙 => do
+    /-| f+1, Γ, ⋆, ⋆, 𝟙 => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
     | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
@@ -332,11 +362,39 @@ mutual
           · exact (← is_eq_type f (Γ ⬝ A) B B').down
           · exact (← is_eq_term f Γ p p' (ΣA;B)).down
         · exact (← is_eq_type f Γ (C⌈p⌉₀) T).down
-    -- TODO: nat_zero_intro_eq
-    -- TODO: nat_succ_intro_eq
-    -- TODO: nat_elim_eq
-    -- TODO: iden_intro_eq
-    -- TODO: iden_elim_eq
+    | f+1, Γ, 𝓏, 𝓏, 𝒩 => do
+      let ctx_ok ← is_ctx (is_type f) Γ
+      return .up <| IsEqualTerm.nat_zero_intro_eq ctx_ok.down
+    | f+1, Γ, 𝓈(n), 𝓈(n'), 𝒩 => do
+      let is_eq_term_n ← is_eq_term f Γ n n' 𝒩
+      return .up <| IsEqualTerm.nat_succ_intro_eq is_eq_term_n.down
+    | f+1, Γ, .indNat A z s n, .indNat A' z' s' n', T => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=A⌈n⌉₀) (B:=T)
+        · apply IsEqualTerm.nat_elim_eq
+          · exact (← is_eq_type f (Γ ⬝ 𝒩) A A').down
+          · exact (← is_eq_term f Γ z z' (A⌈𝓏⌉₀)).down
+          · exact (← is_eq_term f (Γ ⬝ 𝒩 ⬝ A) s s' (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)).down
+          · exact (← is_eq_term f Γ n n' 𝒩).down
+        · exact (← is_eq_type f Γ (A⌈n⌉₀) T).down
+    | f+1, Γ, .refl A a, .refl A' a', T => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=(.iden A a a)) (B:=T)
+        · apply IsEqualTerm.iden_intro_eq
+          · exact (← is_eq_type f Γ A A').down
+          · exact (← is_eq_term f Γ a a' A).down
+        · exact (← is_eq_type f Γ (.iden A a a) T).down
+    | f+1, Γ, .j A B b a₁ a₃ p, .j A' B' b' a₂ a₄ p', T => do
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) (B:=T)
+        · apply IsEqualTerm.iden_elim_eq
+          · exact (← is_eq_type f (Γ ⬝ A ⬝ A⌊↑ₚidₚ⌋ ⬝ v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0)) B B').down
+          · exact (← is_eq_term f (Γ ⬝ A) b b' (B⌈(ₛidₚ)⋄ v(0)⋄ .refl (A⌊↑ₚidₚ⌋) v(0)⌉)).down
+          · exact (← is_eq_type f Γ A A').down
+          · exact (← is_eq_term f Γ a₁ a₂ A).down
+          · exact (← is_eq_term f Γ a₃ a₄ A').down
+          · exact (← is_eq_term f Γ p p' (a₁ ≃[A] a₃)).down
+        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down-/
     -- univ rules
     | f+1, Γ, 𝟙, 𝟙, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ 𝒰 Univ
@@ -399,8 +457,8 @@ mutual
     | f+1, Γ ⬝ T, v(0) => do
       let is_type_T ← is_type f _ Γ T
       return .mk (T⌊↑ₚidₚ⌋) <| HasType.var is_type_T.down
-    | f+1, Γ ⬝ T, v(⟨(i+1), _⟩) => do
-      let ⟨T', h⟩ ← infer_type f Γ v(.mk i (by simp_all only [Nat.add_lt_add_iff_right]))
+    | f+1, Γ ⬝ T, v(⟨(i+1), hi⟩) => do
+      let ⟨T', h⟩ ← infer_type f Γ v(.mk i (Nat.succ_lt_succ_iff.mp hi))
       let is_type_T ← is_type f _ Γ T
       return .mk (T'⌊↑ₚidₚ⌋) <| HasType.weak h is_type_T.down
     | f+1, Γ, λA;b => do
@@ -424,6 +482,8 @@ mutual
     | f+1, _, t => .error s!"infer_type: unsupported pattern {t}"
   termination_by structural f => f
 end
+
+#exit
 
 set_option pp.proofs true
 
