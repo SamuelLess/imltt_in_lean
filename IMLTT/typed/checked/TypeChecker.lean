@@ -274,7 +274,7 @@ mutual
       have pi_comp := IsEqualTerm.pi_comp has_type_b.down has_type_x.down
       have := IsEqualTerm.term_trans pi_comp is_eq_term_b.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_B_T.down
-    | f+1, Γ, .indSigma A B C c (a&b), t, T => do
+    /-| f+1, Γ, .indSigma A B C c (a&b), t, T => do
       let has_type_a ← has_type f Γ a A
       let has_type_b ← has_type f Γ b (B⌈a⌉₀)
       let is_type_C ← is_type f _ (Γ ⬝ ΣA;B) C
@@ -388,7 +388,7 @@ mutual
           · exact (← is_eq_term f Γ a₁ a₂ A).down
           · exact (← is_eq_term f Γ a₃ a₄ A').down
           · exact (← is_eq_term f Γ p p' (a₁ ≃[A] a₃)).down
-        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down
+        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down-/
     -- univ rules
     | f+1, Γ, 𝟙, 𝟙, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ 𝒰 Univ

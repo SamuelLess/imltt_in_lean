@@ -2,7 +2,7 @@ import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.checked.TypeChecker
 import Qq
 
-open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq
+open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
 -- syntax for inductive Tm type
 declare_syntax_cat tm (behavior := both)
@@ -37,18 +37,18 @@ inductive ATm : Nat → Type where
   -- 'types'
   | unit : ATm n
   | empty : ATm n
-  | pi : Syntax.Ident → ATm n → ATm (n + 1) → ATm n
-  | sigma : Syntax.Ident → ATm n → ATm (n + 1) → ATm n
+  | pi : Name → ATm n → ATm (n + 1) → ATm n
+  | sigma : Name → ATm n → ATm (n + 1) → ATm n
   | nat : ATm n
   | iden : ATm n → ATm n → ATm n → ATm n
   | univ : ATm n
   -- 'terms'
-  | var : Syntax.Ident → Fin n → ATm n -- added name and meaning of Fin n becomes stack height
+  | var : Name → Fin n → ATm n -- added name and meaning of Fin n becomes stack height
   | tt : ATm n
   | indUnit : ATm (n + 1) → ATm n → ATm n → ATm n
   | indEmpty : ATm (n + 1) → ATm n → ATm n
   -- λx:A. b B where b⌈x⌉ : B⌈x⌉
-  | lam : Syntax.Ident → ATm n → ATm (n + 1) → ATm (n + 1) → ATm n -- added λ type annotation
+  | lam : Name → ATm n → ATm (n + 1) → ATm (n + 1) → ATm n -- added λ type annotation
   | app : ATm n → ATm n → ATm n
   -- a & b : Σ (dependent)
   | pairSigma : ATm n → ATm n → ATm n → ATm n -- add Σ type annotation
@@ -58,6 +58,7 @@ inductive ATm : Nat → Type where
   | indNat : ATm (n + 1) → ATm n → ATm (n + 2) → ATm n → ATm n
   | refl : ATm n → ATm n → ATm n
   | j : ATm n → ATm (n + 3) → ATm (n + 1) → ATm n → ATm n → ATm n → ATm n
+  deriving Repr, Nonempty
 
 example {f : Fin n} : n-f.toNat <= n := by simp
 
@@ -87,9 +88,12 @@ def ATm.toTm {n} : ATm n → Tm n
 
 inductive ACtx : Nat → Type where
   | empty : ACtx 0
-  | extend : ACtx n → (id : Syntax.Ident) → ATm n → ACtx (n + 1)
+  | extend : ACtx n → (id : Name) → ATm n → ACtx (n + 1)
+  deriving Repr
 
-def ACtx.toList : ACtx n → List ((n : Nat) × Syntax.Ident × ATm n)
+instance : Inhabited ((n : Nat) × ACtx n) := ⟨⟨0, ACtx.empty⟩⟩
+
+def ACtx.toList : ACtx n → List ((n : Nat) × Name × ATm n)
   | .empty => []
   | @ACtx.extend n cx id ty => ⟨n, id, ty⟩ :: cx.toList
 
@@ -113,12 +117,12 @@ partial def elabATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
   | `(tm| 𝒰) => pure .univ
   | `(tm| Π ($id:ident : $A:tm; $B:tm)) => do
     let A  ← elabATm cx A
-    let B ← elabATm (cx a⬝ (id : A)) B
-    pure <| .pi id A B
+    let B ← elabATm (cx a⬝ (id.getId : A)) B
+    pure <| .pi id.getId A B
   | `(tm| Σ ($id:ident : $A:tm; $B:tm)) => do
     let A  ← elabATm cx A
-    let B ← elabATm (cx a⬝ (id : A)) B
-    pure <| .sigma id A B
+    let B ← elabATm (cx a⬝ (id.getId : A)) B
+    pure <| .sigma id.getId A B
   -- terms
   | `(tm| ⋆) => pure .tt
   | `(tm| 𝓏) => pure .zeroNat
@@ -127,14 +131,14 @@ partial def elabATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
     pure <| .succNat t
   | `(tm| λ ($id:ident : $A:tm). $b:tm :: $B:tm) => do
     let A  ← elabATm cx A
-    let b ← elabATm (cx a⬝ (id : A)) b
-    let B ← elabATm (cx a⬝ (id : A)) B
-    pure <| .lam id A b B
+    let b ← elabATm (cx a⬝ (id.getId : A)) b
+    let B ← elabATm (cx a⬝ (id.getId : A)) B
+    pure <| .lam id.getId A b B
   | `(tm| λ ($id:ident : $A:tm). $b:tm) => do
     let A  ← elabATm cx A
-    let b ← elabATm (cx a⬝ (id : A)) b
+    let b ← elabATm (cx a⬝ (id.getId : A)) b
     --let B ← parseATm (cx a⬝ (id : A)) B
-    pure <| .lam id A b .empty
+    pure <| .lam id.getId A b .empty
   | `(tm|  ($a:tm&$b:tm) :: $S:tm) => do
     let S  ← elabATm cx S
     let a  ← elabATm cx a
@@ -148,13 +152,13 @@ partial def elabATm (cx : ACtx n) : TSyntax `tm → TermElabM (ATm n)
     match n with
     | 0 => throwErrorAt id m!"No variables in context"
     | n' + 1 => do
-      let cxlist := cx.toList.map (·.2.1)
-      let (some ⟨i, hi⟩) := cxlist.findFinIdx? (· == id)
+      let cxlist : List Name := cx.toList.map (·.2.1)
+      let (some ⟨i, hi⟩) := cxlist.findFinIdx? (· == id.getId)
         | throwErrorAt id m!"Variable {id} not in context {cxlist}"
       have : cxlist.length = n' + 1 := by
         simp only [cxlist, List.length_map]
         exact ACtx.length cx
-      pure <| .var id ⟨i, Nat.lt_of_lt_of_eq hi this⟩
+      pure <| .var id.getId ⟨i, Nat.lt_of_lt_of_eq hi this⟩
   | _ => throwUnsupportedSyntax
 
 -- syntax for inductive ACtx type
@@ -172,7 +176,7 @@ partial def elabACtx : (stx : TSyntax `ctxx) → TermElabM ((n : Nat) × ACtx n)
   | `(ctxx|$cx:ctxx ⬝ ($id:ident : $ty:tm)) => do
     let ⟨n', cx'⟩ ← elabACtx cx
     let nty ← elabATm cx' ty
-    let newCtx := ACtx.extend cx' id nty
+    let newCtx := ACtx.extend cx' id.getId nty
     pure ⟨n' + 1, newCtx⟩
   | _ => throwUnsupportedSyntax
 
@@ -221,20 +225,79 @@ example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
   apply HasType.ty_conv
   · apply HasType.pi_elim
     · exact hLamPi
-    · exact star_unit
+    · aesop
   · exact IsEqualType.univ_form_eq hεctx
 
 example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
   exact ((has_type fuel _ _ _).toOption.get (by native_decide)).down
 
+def getError {α : Type} (ex : Except String α) : String :=
+  match ex with
+  | .ok _ => "No Error"
+  | .error err => err
+
+def hasTypeErr (fuel : Nat) (Γ : Ctx n) (t : Tm n) (T : Tm n) : TermElabM String :=
+  match has_type fuel Γ t T with
+  | .ok ht => pure "No Error"
+  | .error err => pure err
+
+
 syntax "typecheck" : tactic
 
-macro_rules
-| `(tactic| typecheck) => `(tactic| exact ((has_type fuel _ _ _).toOption.get (by native_decide)).down)
-macro_rules
-| `(tactic| typecheck) => `(tactic| exact ((is_type fuel _ _ _).toOption.get (by native_decide)).down)
+elab "typecheck" : tactic => Lean.Elab.Tactic.withMainContext do
+  let mainGoalId ← getMainGoal
+  let goalType ← mainGoalId.getType
 
+  let mvarΓ ← mkFreshExprMVar (some (← mkFreshTypeMVar)) (userName := `mvarΓ)
+  let mvarΓStx ← mvarΓ.toSyntax
+  let mvart ← mkFreshExprMVar (some (← mkFreshTypeMVar)) (userName := `mvart)
+  let mvartStx ← mvart.toSyntax
+  let mvarT ← mkFreshExprMVar (some (← mkFreshTypeMVar)) (userName := `mvarT)
+  let mvarTStx ← mvarT.toSyntax
+
+  let hasTypeStx ← `((has_type fuel $mvarΓStx $mvartStx $mvarTStx))
+  let stx ← `((($hasTypeStx).toOption.get (by native_decide)).down)
+  logInfo m!"Created: {stx}"
+  let instantiatedProofExpr ← Term.elabTerm stx (some goalType)
+  logInfo m!"Instantiated proof term: {instantiatedProofExpr}"
+  let hasTypeTerm ← Term.elabTerm hasTypeStx none
+  logInfo m!"HasType term: {hasTypeTerm}"
+
+  let errorStx ← `(getError ($hasTypeStx))
+
+  let expectedType ← Term.mkConst ``String
+  let errorExpr ← Term.elabTerm errorStx (some expectedType)
+  -- ALL OF THESE ARE NOT ALLOWED BECAUSE 'unsafe'
+  --let errorMessage : String ← Term.evalTerm String expectedType (← errorExpr.toSyntax)
+  --let errorMessage : String ← Meta.evalExpr String expectedType errorExpr
+  --let t ← evalExpr String expectedType errorExpr
+
+  logInfo m!"Error expr: {errorExpr}"
+  --logInfo m!"Error message: {errorMessage}"
+  try
+
+    evalTactic (← `(tactic|
+      have := $hasTypeStx;
+      first | exact $stx | fail))
+  catch ex =>
+    -- TODO: get the output of (has_type fuel _ _ _) and return the error message
+    throwError m!"Could not typecheck {errorExpr}"
+
+
+/-macro_rules
+| `(tactic| typecheck) => `(tactic| exact ((is_type fuel _ _ _).toOption.get (by native_decide)).down)-/
+
+-- THIS IS MY CURRENT TESTCASE
 theorem my_test : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by typecheck
+
+#eval (getError (has_type fuel ε ((λ𝟙; 𝟙)◃⋆) 𝒰))
+
+#exit
+
+def test_ex : Except String Nat := .error "failed"
+
+-- get the error value and fail otherwise
+#eval test_ex
 
 theorem my_test' : ε ⬝ 𝒰 ⊢ 𝒰 type := by typecheck
 
@@ -249,16 +312,21 @@ elab_rules : term
     let tmE := Lean.toExpr (aterm.toTm)
     let tyE := Lean.toExpr (atype.toTm)
     return mkApp4 (Expr.const ``HasType []) (Lean.Expr.lit <| .natVal n) cxE tmE tyE
-    --return Lean.toExpr (@HasType n (ACtx.toCtx acontext) (aterm.toTm) (atype.toTm))
-    -- does not work because HasType is prop
 
-theorem id_star_unit : >> ε ⬝ (s : 𝟙) ⊢ ((λ(x : 𝟙). x) s) ∶ 𝟙 << := by typecheck
+elab_rules : term
+  | `(>> $cx:ctxx ⊢ $t:tm ∶ $T:tm <<) => do
+    let ⟨n, acontext⟩ ← elabACtx cx
+    let aterm ← elabATm acontext t
+    let atype ← elabATm acontext T
+    let cxE := (Lean.toExpr (ACtx.toCtx acontext)).toSyntax
+    let tmE := Lean.toExpr (aterm.toTm)
+    let tyE := Lean.toExpr (atype.toTm)
+    return mkApp4 (Expr.const ``HasType []) (Lean.Expr.lit <| .natVal n) cxE tmE tyE
+
 
 example : >> ε ⬝ (s : 𝟙) ⊢ (λ(x : 𝟙). x) ∶ Π(s : 𝟙;𝟙) << := by typecheck
 
 --example : >> ε ⬝ (s : 𝟙) ⬝ (A : 𝒰) ⬝ (a : A⌈s⌉₀) ⊢ (λ(x : 𝟙). x) ∶ Π(s : 𝟙;𝟙) << := by typecheck
-
-#print id_star_unit
 
 --Γ ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢ (λ(g : ΠB;C);(λ(f : ΠA;B);(λ(x : A); g◃(f◃x))) : ΠA;C
 theorem comp :
@@ -272,3 +340,14 @@ theorem proj1 :
   >> ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (p : Σ(a : A;B)) ⊢ indΣ A B (A) () << := by
   typecheck
 -/
+
+syntax "ttheorem " ident " : " term : command
+
+macro_rules
+  | `(ttheorem $id:ident : $rule:term) => `(theorem $id : $rule := by typecheck)
+
+ttheorem id_star_unit : >> ε ⬝ (s : 𝟙) ⊢ ((λ(x : 𝟙). x) s) ∶ 𝟙 <<
+
+/-- info: id_star_unit : ε ⬝ 𝟙 ⊢ (λ𝟙; v(0))◃v(0) ∶ 𝟙 -/
+#guard_msgs in
+#check id_star_unit

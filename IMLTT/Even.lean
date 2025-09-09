@@ -34,17 +34,29 @@ syntax "close_even" : tactic
 macro_rules
 | `(tactic| close_even) => `(tactic| exact ((is_even _).get (by decide)).down)
 
+def my42 : Nat := 42
+
 example : Even 42 := by close_even
 
 declare_syntax_cat ev (behavior := both)
 
 syntax "E" num : ev
+syntax "E" term : ev
 syntax "EP" num : ev
 
 syntax ">>" ev "<<" : term
 
 def add (a b : Nat) : Nat := a + b
 
+macro_rules
+  | `(>> E $t:term <<) => `(Even (add $t 3))
+
+elab_rules : term
+  | `(>> E $t:term <<) => do
+    let mysyn ← `(Even $t)
+    let out ← Term.elabTerm mysyn.raw none
+    logInfo s!"elaborated to {out}"
+    Term.elabTerm mysyn.raw none
 elab_rules : term
   | `(>> E $n:num <<) => do
     let mysyn ← `(Even $n)
@@ -59,6 +71,8 @@ elab_rules : term
 #reduce >> EP 42 <<
 
 example : >> E 48 << := by close_even
+theorem yay : >> E my42 << := by close_even
+#print yay
 theorem ev12 : >> EP 11 << := by close_even
 
 #check ev12
