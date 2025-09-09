@@ -2,7 +2,7 @@ import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.checked.TypeChecker
 import Qq
 
-open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq
+open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
 -- syntax for inductive Tm type
 declare_syntax_cat tm (behavior := both)
@@ -231,14 +231,73 @@ example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
 example : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by
   exact ((has_type fuel _ _ _).toOption.get (by native_decide)).down
 
+def getError {α : Type} (ex : Except String α) : String :=
+  match ex with
+  | .ok _ => "No Error"
+  | .error err => err
+
+def hasTypeErr (fuel : Nat) (Γ : Ctx n) (t : Tm n) (T : Tm n) : TermElabM String :=
+  match has_type fuel Γ t T with
+  | .ok ht => pure "No Error"
+  | .error err => pure err
+
+
 syntax "typecheck" : tactic
 
-macro_rules
-| `(tactic| typecheck) => `(tactic| exact ((has_type fuel _ _ _).toOption.get (by native_decide)).down)
-macro_rules
-| `(tactic| typecheck) => `(tactic| exact ((is_type fuel _ _ _).toOption.get (by native_decide)).down)
+elab "typecheck" : tactic => Lean.Elab.Tactic.withMainContext do
+  let mainGoalId ← getMainGoal
+  let goalType ← mainGoalId.getType
 
+  let mvarΓ ← mkFreshExprMVar (some (← mkFreshTypeMVar)) (userName := `mvarΓ)
+  let mvarΓStx ← mvarΓ.toSyntax
+  let mvart ← mkFreshExprMVar (some (← mkFreshTypeMVar)) (userName := `mvart)
+  let mvartStx ← mvart.toSyntax
+  let mvarT ← mkFreshExprMVar (some (← mkFreshTypeMVar)) (userName := `mvarT)
+  let mvarTStx ← mvarT.toSyntax
+
+  let hasTypeStx ← `((has_type fuel $mvarΓStx $mvartStx $mvarTStx))
+  let stx ← `((($hasTypeStx).toOption.get (by native_decide)).down)
+  logInfo m!"Created: {stx}"
+  let instantiatedProofExpr ← Term.elabTerm stx (some goalType)
+  logInfo m!"Instantiated proof term: {instantiatedProofExpr}"
+  let hasTypeTerm ← Term.elabTerm hasTypeStx none
+  logInfo m!"HasType term: {hasTypeTerm}"
+
+  let errorStx ← `(getError ($hasTypeStx))
+
+  let expectedType ← Term.mkConst ``String
+  let errorExpr ← Term.elabTerm errorStx (some expectedType)
+  -- ALL OF THESE ARE NOT ALLOWED BECAUSE 'unsafe'
+  --let errorMessage : String ← Term.evalTerm String expectedType (← errorExpr.toSyntax)
+  --let errorMessage : String ← Meta.evalExpr String expectedType errorExpr
+  --let t ← evalExpr String expectedType errorExpr
+
+  logInfo m!"Error expr: {errorExpr}"
+  --logInfo m!"Error message: {errorMessage}"
+  try
+
+    evalTactic (← `(tactic|
+      have := $hasTypeStx;
+      first | exact $stx | fail))
+  catch ex =>
+    -- TODO: get the output of (has_type fuel _ _ _) and return the error message
+    throwError m!"Could not typecheck {errorExpr}"
+
+
+/-macro_rules
+| `(tactic| typecheck) => `(tactic| exact ((is_type fuel _ _ _).toOption.get (by native_decide)).down)-/
+
+-- THIS IS MY CURRENT TESTCASE
 theorem my_test : ε ⊢ ((λ𝟙; 𝟙)◃⋆) ∶ 𝒰 := by typecheck
+
+#eval (getError (has_type fuel ε ((λ𝟙; 𝟙)◃⋆) 𝒰))
+
+#exit
+
+def test_ex : Except String Nat := .error "failed"
+
+-- get the error value and fail otherwise
+#eval test_ex
 
 theorem my_test' : ε ⬝ 𝒰 ⊢ 𝒰 type := by typecheck
 
@@ -252,14 +311,14 @@ elab_rules : term
     let cxE := Lean.toExpr (ACtx.toCtx acontext)
     let tmE := Lean.toExpr (aterm.toTm)
     let tyE := Lean.toExpr (atype.toTm)
-
     return mkApp4 (Expr.const ``HasType []) (Lean.Expr.lit <| .natVal n) cxE tmE tyE
+
 elab_rules : term
   | `(>> $cx:ctxx ⊢ $t:tm ∶ $T:tm <<) => do
     let ⟨n, acontext⟩ ← elabACtx cx
     let aterm ← elabATm acontext t
     let atype ← elabATm acontext T
-    let cxE := Lean.toExpr (ACtx.toCtx acontext)
+    let cxE := (Lean.toExpr (ACtx.toCtx acontext)).toSyntax
     let tmE := Lean.toExpr (aterm.toTm)
     let tyE := Lean.toExpr (atype.toTm)
     return mkApp4 (Expr.const ``HasType []) (Lean.Expr.lit <| .natVal n) cxE tmE tyE
