@@ -1,0 +1,82 @@
+import IMLTT.untyped.AbstractSyntax
+
+open Lean
+
+inductive ATm : Nat → Type where
+  -- 'types'
+  | unit : ATm n
+  | empty : ATm n
+  | pi : ATm n → ATm (n + 1) → ATm n
+  | sigma : ATm n → ATm (n + 1) → ATm n
+  | nat : ATm n
+  | iden : ATm n → ATm n → ATm n → ATm n
+  | univ : ATm n
+  -- 'terms'
+  | var : Fin n → ATm n -- added name and meaning of Fin n becomes stack height
+  | tt : ATm n
+  | indUnit : ATm (n + 1) → ATm n → ATm n → ATm n
+  | indEmpty : ATm (n + 1) → ATm n → ATm n
+  -- λx:A. b B where b⌈x⌉ : B⌈x⌉
+  | lam : ATm n → ATm (n + 1) → ATm n -- added λ type annotation
+  | app : ATm n → ATm n → ATm n
+  -- a & b : Σ (dependent)
+  | pairSigma : ATm n → ATm n → ATm n → ATm n -- add Σ type annotation
+  | indSigma: ATm n → ATm (n + 1) → ATm (n + 1) → ATm (n + 2) → ATm n → ATm n
+  | zeroNat : ATm n
+  | succNat : ATm n → ATm n
+  | indNat : ATm (n + 1) → ATm n → ATm (n + 2) → ATm n → ATm n
+  | refl : ATm n → ATm n → ATm n
+  | j : ATm n → ATm (n + 3) → ATm (n + 1) → ATm n → ATm n → ATm n → ATm n
+  deriving Repr, Nonempty
+
+example {f : Fin n} : n-f.toNat <= n := by simp
+
+#check (ATm.var ⟨0, by omega⟩ : ATm (1))
+
+def ATm.toTm {n} : ATm n → Tm n
+  | .unit => Tm.unit
+  | .empty => Tm.empty
+  | .pi A B => Tm.pi (A.toTm) (B.toTm)
+  | .sigma A B => Tm.sigma (A.toTm) (B.toTm)
+  | .nat => Tm.nat
+  | .iden A a b => Tm.iden (A.toTm) (a.toTm) (b.toTm)
+  | .univ => Tm.univ
+  | .var i => Tm.var i
+  | .tt => Tm.tt
+  | .indUnit P z c => Tm.indUnit (P.toTm) (z.toTm) (c.toTm)
+  | .indEmpty P c => Tm.indEmpty (P.toTm) (c.toTm)
+  | .lam A b => Tm.lam (A.toTm) (b.toTm)
+  | .app f a => Tm.app (f.toTm) (a.toTm)
+  | .pairSigma a b _ => Tm.pairSigma (a.toTm) (b.toTm)
+  | .indSigma A P cs C p => Tm.indSigma (A.toTm) (P.toTm) (cs.toTm) (C.toTm) (p.toTm)
+  | .zeroNat => Tm.zeroNat
+  | .succNat n => Tm.succNat (n.toTm)
+  | .indNat P z s n => Tm.indNat (P.toTm) (z.toTm) (s.toTm) (n.toTm)
+  | .refl A a => Tm.refl (A.toTm) (a.toTm)
+  | .j A P a b p r => Tm.j (A.toTm) (P.toTm) (a.toTm) (b.toTm) (p.toTm) (r.toTm)
+
+-- syntax for inductive Annotated Term type
+declare_syntax_cat atm (behavior := both)
+
+-- 'types'
+syntax "𝟘" : atm
+syntax "𝟙" : atm
+syntax "𝒩" : atm
+syntax "𝒰" : atm
+syntax atm " → " atm : atm -- nondependent Pi type
+syntax "Π" "(" ident ":" atm ";"  atm ")" : atm
+syntax "Σ" "(" ident ":" atm ";"  atm ")" : atm
+-- 'terms'
+syntax ident : atm
+syntax "⋆" : atm
+syntax "𝓏" : atm
+syntax "𝓈(" atm ")" : atm
+syntax "λ " "(" ident " : " atm  ")" ". " atm : atm
+syntax "(" atm "&" atm ")" "::" atm : atm
+syntax atm atm : atm
+syntax "ind𝟙" atm atm atm : atm
+syntax "(" atm ")" : atm
+
+#check_failure `(atm|𝟙 → 𝟙)
+#check_failure `(atm|Π(x : 𝟙;𝟙))
+#check_failure `(atm|Σ(x : 𝒰;x))
