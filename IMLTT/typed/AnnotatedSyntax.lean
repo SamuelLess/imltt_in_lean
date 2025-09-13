@@ -29,8 +29,6 @@ inductive ATm : Nat → Type where
   | j : ATm n → ATm (n + 3) → ATm (n + 1) → ATm n → ATm n → ATm n → ATm n
   deriving Repr, Nonempty
 
-example {f : Fin n} : n-f.toNat <= n := by simp
-
 #check (ATm.var ⟨0, by omega⟩ : ATm (1))
 
 def ATm.toTm {n} : ATm n → Tm n
@@ -80,3 +78,21 @@ syntax "(" atm ")" : atm
 #check_failure `(atm|𝟙 → 𝟙)
 #check_failure `(atm|Π(x : 𝟙;𝟙))
 #check_failure `(atm|Σ(x : 𝒰;x))
+
+inductive ACtx : Nat → Type where
+  | empty : ACtx 0
+  | extend : Name → ACtx n → ATm n → ACtx (n + 1)
+  deriving Repr
+
+def ACtx.toCtx {n} : ACtx n → Ctx n
+  | .empty => Ctx.empty
+  | .extend _ Γ T => Ctx.extend (Γ.toCtx) (T.toTm)
+
+def ACtx.toNameList : ACtx n → List Name
+  | .empty => []
+  | .extend name Γ _ => name :: Γ.toNameList
+
+declare_syntax_cat actx (behavior := both)
+
+syntax "ε" : actx
+syntax actx "⬝" "(" ident ":" atm ")" : actx
