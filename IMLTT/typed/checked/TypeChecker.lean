@@ -8,7 +8,7 @@ set_option profiler.threshold 100 -- Optional: only show tactics that take longe
 
 def fuel := 200 -- proof go brrr 🚗
 
-partial def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PLift (Γsome ⊢ T type)))
+def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except String (PLift (Γsome ⊢ T type)))
     -> (Γ : Ctx n) -> Except String (PLift (Γ ctx))
   | _, ε => pure <| .up IsCtx.empty
   | my_is_type, Ctx.extend Γ' T' => do
@@ -18,7 +18,7 @@ partial def is_ctx : ((k : Nat) -> (Γsome : Ctx k) → (T : Tm k) → Except St
 
 set_option maxHeartbeats 500000
 mutual
-  partial def is_type : (fuel : Nat) -> (n : Nat)
+  def is_type : (fuel : Nat) -> (n : Nat)
       -> (Γ : Ctx n) → (T : Tm n) → Except String (PLift (Γ ⊢ T type))
     | 0, _, _, _ => .error "is_type: out of fuel"
     | f+1, _, Γ, 𝟘 => do
@@ -49,8 +49,9 @@ mutual
     | f+1, _, Γ, A => do
       let has_type_A ← has_type f Γ A 𝒰
       return .up <| IsType.univ_elim has_type_A.down
+  termination_by structural f => f
 
-  partial def has_type : (fuel : Nat) → (Γ : Ctx n) →
+  def has_type : (fuel : Nat) → (Γ : Ctx n) →
       (t : Tm n) → (T : Tm n) → Except String (PLift (Γ ⊢ t ∶ T))
     | 0, _, _, _ => .error "has_type: out of fuel"
     -- variables
@@ -189,7 +190,7 @@ mutual
         · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a⋄ a'⋄ p⌉) B').down
     | _, _, t, T => .error s!"has_type: unsupported pattern {t} ∶ {T}"
 
-  partial def is_eq_type : (fuel : Nat) -> (Γ : Ctx n) → (A : Tm n) → (B : Tm n) →
+  def is_eq_type : (fuel : Nat) -> (Γ : Ctx n) → (A : Tm n) → (B : Tm n) →
       Except String (PLift (Γ ⊢ A ≡ B type))
     | 0, _, A, B => .error s!"is_eq_type: out of fuel {A} ≡ {B}"
     -- congruence (formation) rules
@@ -230,8 +231,9 @@ mutual
     | f+1, Γ, T, T' => do
       let is_eq_symm ← is_eq_type f Γ T' T
       return .up <| IsEqualType.type_symm is_eq_symm.down
+  termination_by structural f => f
 
-  partial def is_eq_term : (fuel: Nat) -> (Γ : Ctx n) ->
+  def is_eq_term : (fuel: Nat) -> (Γ : Ctx n) ->
       (a : Tm n) → (a' : Tm n) → (A : Tm n) → Except String (PLift (Γ ⊢ a ≡ a' ∶ A))
     | 0, Γ, a, a', A =>
       .error s!"is_eq_term: out of fule with {repr Γ} ⊢ {a} ≡ {a'} : {A}"
@@ -429,8 +431,9 @@ mutual
     | f+1, Γ, a, a', A => do
       let is_eq_symm ← is_eq_term f Γ a' a A
       return .up <| IsEqualTerm.term_symm is_eq_symm.down
+  termination_by structural f => f
 
-  partial def infer_type : (fuel : Nat) → (Γ : Ctx n) → (t : Tm n) → Except String (Σ' T, Γ ⊢ t ∶ T)
+  def infer_type : (fuel : Nat) → (Γ : Ctx n) → (t : Tm n) → Except String (Σ' T, Γ ⊢ t ∶ T)
     | 0, _, _ => .error "infer_type: out of fuel"
     | f+1, Γ, ⋆ => do
       let ctx_ok ← is_ctx (is_type f) Γ
@@ -473,6 +476,7 @@ mutual
       let has_type_a ← has_type f Γ a A
       return .mk (B⌈a⌉₀) <| HasType.pi_elim hg has_type_a.down
     | f+1, _, t => .error s!"infer_type: unsupported pattern {t}"
+  termination_by structural f => f
 end
 
 #exit
