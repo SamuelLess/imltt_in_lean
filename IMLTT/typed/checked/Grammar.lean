@@ -267,7 +267,6 @@ elab "typecheck" : tactic => Lean.Elab.Tactic.withMainContext do
 
   let expectedType ← Term.mkConst ``String
   let errorExpr ← Term.elabTerm errorStx (some expectedType)
-  -- ALL OF THESE ARE NOT ALLOWED BECAUSE 'unsafe'
   --let errorMessage : String ← Term.evalTerm String expectedType (← errorExpr.toSyntax)
   --let errorMessage : String ← Meta.evalExpr String expectedType errorExpr
   --let t ← evalExpr String expectedType errorExpr
@@ -280,7 +279,6 @@ elab "typecheck" : tactic => Lean.Elab.Tactic.withMainContext do
       have := $hasTypeStx;
       first | exact $stx | fail))
   catch ex =>
-    -- TODO: get the output of (has_type fuel _ _ _) and return the error message
     throwError m!"Could not typecheck {errorExpr}"
 
 

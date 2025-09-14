@@ -1,3 +1,4 @@
+import Std.Tactic.BVDecide
 import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.checked.TypeChecker
 import IMLTT.typed.AnnotatedSyntax
@@ -82,11 +83,11 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM Q((n : Nat) × AT
       throwErrorAt b m!"Context length mismatch: expected {n'}+1, got {n}"
   | _ => throwUnsupportedSyntax
 
-elab "[tt|" t:atm "]" : term => elabATm [] t
+elab "[ttm|" t:atm "]" : term => elabATm [] t
 
-example : ATm 0 := [tt| 𝟙].2
-#check [tt| λ (x : 𝟙). ⋆]
-#check [tt| Π (x : 𝒰; x)]
+example : ATm 0 := [ttm| 𝟙].2
+#check [ttm| λ (x : 𝟙). ⋆]
+#check [ttm| Π (x : 𝒰; x)]
 
 partial def elabACtx (cx : ElabCtx) : TSyntax `actx → TermElabM (ElabCtx × Q((n : Nat) × ACtx n))
   | `(actx| ε) => do
@@ -125,11 +126,25 @@ partial def elabTTm (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) : TermEla
     | throwErrorAt stxt "Expected a term"
   let ~q(⟨$nT, $T⟩) ← elabATm cx stxT
     | throwErrorAt stxt "Expected a term"
-  let tn : Q(Tm $n) := mkApp (mkConst ``ATm.toTm) t
-  let Tn : Q(Tm $n) := mkApp (mkConst ``ATm.toTm) T
-  let proof := q(has_type $n ($acx').toCtx $tn $Tn)
-  let ttm? : Q(Except _ _) ← whnf proof
-  throwError "Not implemented"
+  logInfo m!"t={t}; T={T}"
+  let tn : Q(Tm $n) := mkApp2 (mkConst ``ATm.toTm) n t
+  let Tn : Q(Tm $n) := mkApp2 (mkConst ``ATm.toTm) n T
+  let proof := q(has_type 30 ($acx').toCtx $tn $Tn)
+  let ttm? : Q(Except String (PLift (HasType ($acx').toCtx $tn $Tn))) ← whnf proof
+  match ttm? with
+  | ~q(Except.ok $p) =>
+    logInfo m!"Found proof :)"
+    --return p
+    --let p : Q($acx'.toCtx ⊢ $tn ∶ $Tn) ← whnf p
+    --let pdown : Q(($acx').toCtx ⊢ ($tn) ∶ ($Tn)) := (mkApp (mkConst ``PLift.down) p)
+    let ttm := mkApp5 (mkConst ``TTm.mk) n (← mkAppM ``ACtx.toCtx #[acx']) tn Tn (← mkAppM ``PLift.down #[p])
+    logInfo m!"Elaborated term: {ttm}"
+    return ttm
+    --return q(⟨$n, { Γ := ($acx').toCtx, t := $tn, T := $Tn, hasType := $pdown }⟩)
+  | ~q(Except.error $msg) =>
+    let msg ← Meta.reduce msg
+    throwErrorAt stxt "Type error: { msg }"
+  | m => throwErrorAt stxt m!"Could not match: {m}"
   --let ttm? := q(infer [] $t)
   /-
   let ttm? : Q(Option (Σ' T, [] ⊢ $t ∶ T)) ← whnf ttm?
@@ -141,3 +156,11 @@ partial def elabTTm (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) : TermEla
       return q({ Γ := [], t := $t, T := $T, hasType := $p'})
   | _ => throwError "type-incorrect!"
   -/
+
+elab "[tt|" cx:actx "⊢" t:atm ":" T:atm "]" : term => elabTTm cx t T
+
+#reduce has_type 30 ε ⋆ (Tm.univ)
+
+def test1 := [tt| ε ⊢ ⋆ : 𝟙]
+def test2 := [tt| ε ⊢ ⋆ : 𝒰]
+def test3 := [tt| ε ⊢ 𝓈(𝓏) : 𝒩]
