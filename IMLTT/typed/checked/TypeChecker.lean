@@ -3,8 +3,8 @@ import IMLTT.untyped.AbstractSyntax
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
-set_option profiler true
-set_option profiler.threshold 100 -- Optional: only show tactics that take longer than 100ms
+--set_option profiler true
+--set_option profiler.threshold 100 -- Optional: only show tactics that take longer than 100ms
 
 def fuel := 200 -- proof go brrr 🚗
 
@@ -276,7 +276,7 @@ mutual
       have pi_comp := IsEqualTerm.pi_comp has_type_b.down has_type_x.down
       have := IsEqualTerm.term_trans pi_comp is_eq_term_b.down
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_B_T.down
-    /-| f+1, Γ, .indSigma A B C c (a&b), t, T => do
+    | f+1, Γ, .indSigma A B C c (a&b), t, T => do
       let has_type_a ← has_type f Γ a A
       let has_type_b ← has_type f Γ b (B⌈a⌉₀)
       let is_type_C ← is_type f _ (Γ ⬝ ΣA;B) C
@@ -319,7 +319,7 @@ mutual
           · exact (← is_eq_term f Γ a a' (A⌈⋆⌉₀)).down
           · exact (← is_eq_term f Γ b b' 𝟙).down
         · exact (← is_eq_type f Γ (A⌈b⌉₀) Asubst).down
-    | f+1, Γ, .indEmpty A b, .indEmpty A' b', Asubst => do
+    /-| f+1, Γ, .indEmpty A b, .indEmpty A' b', Asubst => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=A⌈b⌉₀) (B:=Asubst)
         · apply IsEqualTerm.empty_elim_eq
@@ -347,7 +347,7 @@ mutual
         apply IsEqualTerm.sigma_intro_eq
         · exact (← is_eq_term f Γ a a' A).down
         · exact (← is_eq_term f Γ b b' (B⌈a⌉₀)).down
-        · exact (← is_type f _ (Γ ⬝ A) B).down
+        · exact (← is_type f _ (Γ ⬝ A) B).down-/
     | f+1, Γ, .indSigma A B C c p, .indSigma A' B' C' c' p', T => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=C⌈p⌉₀) (B:=T)
@@ -364,7 +364,7 @@ mutual
     | f+1, Γ, 𝓈(n), 𝓈(n'), 𝒩 => do
       let is_eq_term_n ← is_eq_term f Γ n n' 𝒩
       return .up <| IsEqualTerm.nat_succ_intro_eq is_eq_term_n.down
-    | f+1, Γ, .indNat A z s n, .indNat A' z' s' n', T => do
+    /-| f+1, Γ, .indNat A z s n, .indNat A' z' s' n', T => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=A⌈n⌉₀) (B:=T)
         · apply IsEqualTerm.nat_elim_eq
@@ -479,7 +479,6 @@ mutual
   termination_by structural f => f
 end
 
-#exit
 
 set_option pp.proofs true
 
@@ -575,6 +574,18 @@ def ret_id : Tm n := (λ𝒰;(λv(0);v(0)))
 #guard_msgs in
 #eval has_type fuel (ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)) ((v(1) ◃ v(0))) v(2)
 
+def π₁ : Tm n :=
+  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰) (v(3)) (v(1)) (v(0)))
+
+def π₂ : Tm n :=
+  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰)
+    ((Πv(3);𝒰)⌈π₁◃v(3)◃(Πv(3);𝒰)◃v(0)⌉₀)
+    (v(0)) (v(0)))
+
+#eval has_type fuel ε π₁ (Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2))
+
+/-example : (ε ⊢ π₁ ∶ Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2)) :=
+  ((has_type fuel _ _ _).toOption.get (by native_decide)).down-/
 
 
 /-- info: success -/
