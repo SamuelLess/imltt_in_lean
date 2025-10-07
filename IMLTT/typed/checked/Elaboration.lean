@@ -33,9 +33,12 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     else
       let ttype ← instantiateMVars (← getConstInfo id).type
       if ← isDefEq ttype q(ATm 0) then
-        logInfo m!"Found global ATm {id}"
-        let myterm : ATm 0 ← evalConst (ATm 0) id
-        return ⟨0, myterm⟩
+        try
+          let myterm : ATm 0 ← unsafe evalConst (ATm 0) id
+          let n := cx.length
+          let h : 0 + n = n := by omega
+          return ⟨n, h ▸ (myterm.shift n)⟩
+        catch _ => throwError "Something went wrong when evaluating constant '{id}'"
     throwError "Unexpected identifier '{id}', context: {cx.toStr}"
   | `(atm| ($t:atm)) => elabATm cx t
   -- types
@@ -161,9 +164,4 @@ macro_rules
       #guard_msgs(drop error) in
       theorem $id : ($ttm_id).Γ ⊢ ($ttm_id).t ∶ ($ttm_id).T := ($ttm_id).hasType)
 
---def test8TTm := [tt| ε ⊢ 1 : 𝟙]
---theorem test8 : (test8TTm).Γ ⊢ (test8TTm).t ∶ (test8TTm).T := (test8TTm).hasType
-
-ttheorem test8 : ε ⬝ (x : 𝟙) ⊢ y : 𝟙
-
-#print test8
+ttheorem test8 : ε ⬝ (x : 𝟙) ⬝ (y : 𝒰) ⬝ (w : myunit) ⊢ w : myunit

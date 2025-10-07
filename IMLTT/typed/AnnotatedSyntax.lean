@@ -53,6 +53,32 @@ def ATm.toTm {n} : ATm n → Tm n
   | .refl A a => Tm.refl (A.toTm) (a.toTm)
   | .j A P a b p r => Tm.j (A.toTm) (P.toTm) (a.toTm) (b.toTm) (p.toTm) (r.toTm)
 
+theorem h : n + k + 1 = n + 1 + k := by omega
+theorem h' : n + k + 2 = n + 2 + k := by omega
+theorem h'' : n + k + 3 = n + 3 + k := by omega
+
+def ATm.shift {n} (k : Nat) : ATm n → ATm (n + k)
+  | .unit => .unit
+  | .empty => .empty
+  | .pi A B => .pi (A.shift k) (h ▸ (B.shift k))
+  | .sigma A B => .sigma (A.shift k) (h ▸ B.shift k)
+  | .nat => .nat
+  | .iden A a b => .iden (A.shift k) (a.shift k) (b.shift k)
+  | .univ => .univ
+  | .var i => .var ⟨i.1 + k, by omega⟩
+  | .tt => .tt
+  | .indUnit P z c => .indUnit (h ▸ P.shift k) (z.shift k) (c.shift k)
+  | .indEmpty P c => .indEmpty (h ▸ P.shift k) (c.shift k)
+  | .lam A b => .lam (A.shift k) (h ▸ b.shift k)
+  | .app f a => .app (f.shift k) (a.shift k)
+  | .pairSigma a b A => .pairSigma (a.shift k) (b.shift k) (A.shift k)
+  | .indSigma A P cs C p => .indSigma (A.shift k) (h ▸ P.shift k) (h ▸ cs.shift k) (h' ▸ C.shift k) (p.shift k)
+  | .zeroNat => .zeroNat
+  | .succNat n => .succNat (n.shift k)
+  | .indNat P z s n => .indNat (h ▸ P.shift k) (z.shift k) (h' ▸ s.shift k) (n.shift k)
+  | .refl A a => .refl (A.shift k) (a.shift k)
+  | .j A P a b p r => .j (A.shift k) (h'' ▸ P.shift k) (h ▸ a.shift k) (b.shift k) (p.shift k) (r.shift k)
+
 -- syntax for inductive Annotated Term type
 declare_syntax_cat atm (behavior := both)
 
