@@ -5,8 +5,6 @@ import Qq
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
-namespace ElabTm
-
 example (n : Q(Nat)) (h : Q($n = 3)): Q(Vector Nat ($n)) :=
   q(Vector.mk #[1,2,3] (Eq.symm $h))
 
@@ -19,10 +17,11 @@ protected def empty : ElabCtx := []
 def extend (Γ : ElabCtx) (name : Name) : ElabCtx :=
   name :: Γ
 
-#check List.findFinIdx?
-
 def getFinIdx? (cx : ElabCtx) (name : Name) : Option ((n : Nat) × (Fin n)) :=
   cx.findFinIdx? (·==name) |>.map (⟨cx.length, ·⟩)
+
+def toStr (cx : ElabCtx) : String := if cx.isEmpty then "ε" else
+  String.intercalate ", " (cx.map toString)
 
 end ElabCtx
 
@@ -32,7 +31,12 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     if let some ⟨n, i⟩ := cx.getFinIdx? id then
       return ⟨n, ATm.var i⟩
     else
-      throwError "Unexpected identifier {id}, not in context"
+      let ttype ← instantiateMVars (← getConstInfo id).type
+      if ← isDefEq ttype q(ATm 0) then
+        logInfo m!"Found global ATm {id}"
+        let myterm : ATm 0 ← evalConst (ATm 0) id
+        return ⟨0, myterm⟩
+    throwError "Unexpected identifier '{id}', context: {cx.toStr}"
   | `(atm| ($t:atm)) => elabATm cx t
   -- types
   | `(atm| 𝟘) => do
@@ -53,9 +57,7 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     let ⟨n', BE⟩ ← elabATm (cx.extend id') B
     --if ← isDefEq q($n') q($n+1) then
     if h : n+1 = n' then
-      let bbE : (ATm (n+1)) := by
-        rw [h]
-        exact BE
+      let bbE : (ATm (n+1)) := h ▸ BE
       let piE : (ATm n) := ATm.pi AE bbE
       return ⟨n, piE⟩
     else
@@ -86,9 +88,10 @@ elab "[ttm|" t:atm "]" : term => do
   let ⟨_, atm⟩ ← elabATm [] t
   return Lean.toExpr atm
 
-example : ATm 0 := [ttm| 𝟙]
-#check [ttm| λ (x : 𝟙). ⋆]
-#check [ttm| Π (x : 𝒰; x)]
+def myunit : ATm 0 := [ttm| 𝟙]
+def uhhh : ATm 0 := [ttm| myunit]
+example : ATm 0 := [ttm| λ (x : myunit). x]
+example : ATm 0 := [ttm| Π (x : 𝒰; x)]
 
 partial def elabACtx (cx : ElabCtx) : TSyntax `actx → TermElabM (ElabCtx × ((n : Nat) × ACtx n))
   | `(actx| ε) => do
@@ -155,7 +158,12 @@ macro_rules
     let ttm_name := Name.str id.getId "_TTm"
     let ttm_id := mkIdent ttm_name
     `(def $ttm_id:ident := [tt| $cx ⊢ $t : $T]
+      #guard_msgs(drop error) in
       theorem $id : ($ttm_id).Γ ⊢ ($ttm_id).t ∶ ($ttm_id).T := ($ttm_id).hasType)
 
-ttheorem test8 : ε ⊢ ⋆ : 𝟙
-#check test8
+--def test8TTm := [tt| ε ⊢ 1 : 𝟙]
+--theorem test8 : (test8TTm).Γ ⊢ (test8TTm).t ∶ (test8TTm).T := (test8TTm).hasType
+
+ttheorem test8 : ε ⬝ (x : 𝟙) ⊢ y : 𝟙
+
+#print test8
