@@ -27,7 +27,7 @@ inductive ATm : Nat → Type where
   | indNat : ATm (n + 1) → ATm n → ATm (n + 2) → ATm n → ATm n
   | refl : ATm n → ATm n → ATm n
   | j : ATm n → ATm (n + 3) → ATm (n + 1) → ATm n → ATm n → ATm n → ATm n
-  deriving Repr, Nonempty
+  deriving Repr, Nonempty, Lean.ToExpr
 
 #check (ATm.var ⟨0, by omega⟩ : ATm (1))
 
@@ -82,7 +82,7 @@ syntax "(" atm ")" : atm
 inductive ACtx : Nat → Type where
   | empty : ACtx 0
   | extend : Name → ACtx n → ATm n → ACtx (n + 1)
-  deriving Repr
+  deriving Repr, Lean.ToExpr
 
 def ACtx.toCtx {n} : ACtx n → Ctx n
   | .empty => Ctx.empty
