@@ -21,6 +21,7 @@ inductive ATm : Nat → Type where
   | app : ATm n → ATm n → ATm n
   -- a & b : Σ (dependent)
   | pairSigma : ATm n → ATm n → ATm n → ATm n -- add Σ type annotation
+  -- (Γ ⊢ A) (Γ ⬝ A ⊢ B) ⬝ (Γ ⬝ ΣA;B ⊢ C) (Γ⬝ A ⬝ B ⊢ c : C) (Γ ⊢ p : ΣA;B)
   | indSigma: ATm n → ATm (n + 1) → ATm (n + 1) → ATm (n + 2) → ATm n → ATm n
   | zeroNat : ATm n
   | succNat : ATm n → ATm n
@@ -95,23 +96,25 @@ syntax "Σ" "(" ident ":" atm ";"  atm ")" : atm
 syntax "(" atm ")" : atm
 syntax ident : atm
 syntax "⋆" : atm
-syntax "ind𝟘" atm atm atm : atm
-syntax "ind𝟙" atm atm atm : atm
-syntax "λ " "(" ident " : " atm  ")" ". " atm : atm
-syntax atm atm : atm
+syntax "ind0" "(" ident atm atm ")": atm
+syntax "ind1" "(" ident atm atm atm ")" : atm
+syntax "λ " "(" ident " : " atm  ")" "." atm : atm
+syntax atm "◃" atm : atm
 syntax "(" atm "&" atm ")" "::" atm : atm
-syntax "indΣ" atm atm atm atm atm : atm
+syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
 syntax "𝓏" : atm
 syntax "𝓈(" atm ")" : atm
-syntax "ind𝒩" atm atm atm atm : atm
-syntax "refl" atm atm : atm
-syntax "j" atm atm atm atm atm atm : atm
+syntax "indN" "(" ident ident atm atm atm atm ")" : atm
+syntax "refl" "(" atm atm ")" : atm
+syntax "j" "(" ident ident ident atm atm atm atm atm atm ")" : atm
 syntax atm "⌈" term "⌉" : atm
 syntax atm "⌊" term "⌋" : atm
 
 #check_failure `(atm|𝟙 → 𝟙)
 #check_failure `(atm|Π(x : 𝟙;𝟙))
 #check_failure `(atm|Σ(x : 𝒰;x))
+#check_failure `(atm| ind0(a P b))
+#check_failure `(atm| indS(a b p A B C c p))
 
 inductive ACtx : Nat → Type where
   | empty : ACtx 0
