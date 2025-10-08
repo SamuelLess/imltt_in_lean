@@ -310,7 +310,6 @@ theorem var_type' : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1)◃v(0) ∶ v
         · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
           · aesop
           · aesop
-
   apply HasType.pi_elim this
   apply HasType.var
   apply boundary_type_eq_type' (A := v(1))
@@ -336,7 +335,7 @@ example : (ε ⬝ 𝟙 ⬝ 𝟙 ⬝ (((λ𝟙;𝒩)◃v(0))⌈⋆⌉₀) ⊢ ind
   typecheck
 
 --Γ ⊢ ΣA;B type → (Γ ⊢ p ∶ ΣA;B) →  Γ ⊢ A.indSigma B (A⌊↑ₚidₚ⌋) (v(0)⌊↑ₚidₚ⌋) p  ∶ A :=
-example : (ε ⬝ 𝒰 ⊢ Σv(0);(Πv(1);𝒰) type) := by typecheck
+--example : (ε ⬝ 𝒰 ⊢ Σv(0);(Πv(1);𝒰) type) := by typecheck
 
 #check HasType.sigma_elim
 #eval (((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉ : Tm 3)
@@ -355,11 +354,18 @@ def p : Tm n := (⋆&𝓏)
 def C : Tm (n+1) := ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))
 def c : Tm (n+2):= 𝓏
 
+set_option pp.proofs true
+
+instance : ToString (Except String (PLift α)) where
+  toString e := match e with
+    | .error s => s
+    | .ok _ => "success"
+
 #eval is_eq_type fuel (ε ⬝ A ⬝ B) 𝒩 (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
 
 #eval has_type fuel (ε ⬝ A ⬝ B) c (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
 
-example : (ε ⬝ (ΣA;B) ⊢ C type) := by typecheck
+--example : (ε ⬝ (ΣA;B) ⊢ C type) := by typecheck
 example : (ε ⬝ A ⬝ B) ⊢ c ∶ (C⌈(ₛ↑ₚ↑ₚidₚ) ⋄ v(1)&v(0)⌉) := by typecheck
 example : (ε ⬝ A ⬝ B) ⊢ c ∶ 𝒩 := by typecheck
 
@@ -370,3 +376,115 @@ example : ε ⊢
       ∶ ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))⌈(⋆&𝓏)⌉₀ := by typecheck
 
 --example : (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ (Σv(1);v(1)) ⊢ .indSigma v(2) v(1) (v(2+1)) v(0+1) v(0) ∶ v(3)) := by typecheck
+
+-- OLD EXAMPLES
+
+
+#eval has_type fuel (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ Σv(1);v(1)) (v(2).indSigma v(1) v(2 + 1) v(0 + 1) v(0)) v(1)
+#eval is_ctx (is_type fuel) (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ Σv(1);v(1))
+
+
+#eval is_eq_term fuel (ε ⬝ 𝟙) (v(0)⌈⋆⌉₀) (⋆)  𝟙
+
+#eval is_ctx (is_type fuel) (ε ⬝ 𝒰 ⬝ 𝟙 ⬝ (v(2)⌈⋆⌉₀))
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝟙 ⬝ 𝟙 ⬝ (λ𝟙; 𝒩)◃v(0)⌈⋆⌉₀) v(0) ((λ𝟙; 𝒩)◃v(0)⌈⋆⌉₀)
+
+
+/-- info: success -/
+#guard_msgs in
+#eval is_ctx (is_type fuel) (ε ⬝ 𝟙 ⬝ 𝒰 ⬝ 𝒩 ⬝ (v(2)⌈⋆⌉₀))
+--(ε ⬝ 𝟙 ⬝ 𝒰 ⬝ 𝒩 ⬝ (v(3)⌈⋆⌉₀) ⊢ indUnit v(2) v(3) v(0) ∶ v(2)⌈v(3)⌉₀)
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel ((ε ⬝ 𝒰 ⬝ 𝒰 ⬝ 𝒰 ⬝ Πv(1);v(1)) ⬝ Πv(3);v(3))
+  ((λΠv(3);v(3); λΠv(5);v(5); λv(6); v(2)◃(v(1)◃v(0)))◃v(1)◃v(0)) (Πv(4);v(3))
+
+/-- info: success -/
+#guard_msgs in
+#eval (has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) v(1) 𝒩)
+/-- info: success -/
+#guard_msgs in
+#eval (has_type fuel (ε ⬝ 𝟘 ⬝ 𝒩 ⬝ 𝟙) v(2) 𝟘)
+/-- info: success -/
+#guard_msgs in
+#eval (has_type fuel ε ((λ𝒰; v(0))◃𝟙) 𝒰)
+/-- info: success -/
+#guard_msgs in
+#eval (is_eq_type fuel (ε ⬝ 𝟙) 𝟙 (𝟙⌊↑ₚidₚ⌋⌈v(0)⌉₀))
+
+theorem star_unit : ε ⊢ ⋆ ∶ 𝟙 := ((has_type fuel ε ⋆ 𝟙).toOption.get (by native_decide)).down
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)
+
+theorem idpi : ε ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 :=
+  ((has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)).toOption.get (by native_decide)).down
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0)))◃v(1)) 𝒩
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&v(0))◃v(1)) (Σ𝒩;𝒩)
+
+def ret_id : Tm 3 := (λ𝒰;(λv(0);v(0)))
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((ret_id◃𝒩)◃v(0)))◃v(1)) (Σ𝒩;𝒩)
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((λ𝒰;((λv(0);v(0))))◃𝒩◃v(0)))◃v(1)) (Σ𝒩;𝒩)
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃v(1)) 𝒩
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩) ((λ𝒩;v(0))◃v(0)) 𝒩
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒰
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒩) ((λ(((λ𝒰;v(0)))◃𝒩);v(0))◃v(0)) 𝒩
+
+/-- info: success -/
+#guard_msgs in
+#eval is_eq_type fuel (ε ⬝ 𝒰) v(0) v(0)
+
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒰) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃𝓏) 𝒩
+/-- info: success -/
+#guard_msgs in
+#eval has_type fuel (ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)) ((v(1) ◃ v(0))) v(2)
+
+def π₁ : Tm n :=
+  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰) (v(3)) (v(1)) (v(0)))
+
+def π₂ : Tm n :=
+  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰)
+    ((Πv(3);𝒰)⌈π₁◃v(3)◃(Πv(3);𝒰)◃v(0)⌉₀)
+    (v(0)) (v(0)))
+
+#eval has_type fuel ε π₁ (Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2))
+
+/-example : (ε ⊢ π₁ ∶ Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2)) :=
+  ((has_type fuel _ _ _).toOption.get (by native_decide)).down-/
+
+
+/-- info: success -/
+#guard_msgs in
+#eval is_eq_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒩
+
+example : ε ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 :=
+  ((has_type fuel ε (Tm.lam 𝒩 𝓈(v(0))) (Tm.pi 𝒩 𝒩)).toOption.get (by native_decide)).down

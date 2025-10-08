@@ -65,7 +65,8 @@ def ATm.shift {n} (k : Nat) : ATm n → ATm (n + k)
   | .nat => .nat
   | .iden A a b => .iden (A.shift k) (a.shift k) (b.shift k)
   | .univ => .univ
-  | .var i => .var ⟨i.1 + k, by omega⟩
+  --terms
+  | .var i => .var ⟨i.1, by omega⟩
   | .tt => .tt
   | .indUnit P z c => .indUnit (h ▸ P.shift k) (z.shift k) (c.shift k)
   | .indEmpty P c => .indEmpty (h ▸ P.shift k) (c.shift k)
@@ -93,12 +94,14 @@ syntax "Σ" "(" ident ":" atm ";"  atm ")" : atm
 -- 'terms'
 syntax ident : atm
 syntax "⋆" : atm
+syntax "ind𝟘" atm atm atm : atm
+syntax "ind𝟙" atm atm atm : atm
+syntax "λ " "(" ident " : " atm  ")" ". " atm : atm
+syntax atm atm : atm
+syntax "(" atm "&" atm ")" "::" atm : atm
+syntax "indΣ" atm atm atm atm atm : atm
 syntax "𝓏" : atm
 syntax "𝓈(" atm ")" : atm
-syntax "λ " "(" ident " : " atm  ")" ". " atm : atm
-syntax "(" atm "&" atm ")" "::" atm : atm
-syntax atm atm : atm
-syntax "ind𝟙" atm atm atm : atm
 syntax "(" atm ")" : atm
 
 #check_failure `(atm|𝟙 → 𝟙)
