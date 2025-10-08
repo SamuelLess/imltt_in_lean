@@ -5,9 +5,6 @@ import Qq
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
-example (n : Q(Nat)) (h : Q($n = 3)): Q(Vector Nat ($n)) :=
-  q(Vector.mk #[1,2,3] (Eq.symm $h))
-
 def ElabCtx := List Name
 
 namespace ElabCtx
@@ -25,21 +22,25 @@ def toStr (cx : ElabCtx) : String := if cx.isEmpty then "ε" else
 
 end ElabCtx
 
+def evalConstATm : Name → TermElabM (ATm 0) := fun id => do
+  let info ← getConstInfo id
+  let ttype ← instantiateMVars info.type
+  if ← isDefEq ttype q(ATm 0) then
+    unsafe evalConst (ATm 0) id
+  else
+    throwError "Constant '{id}' is not of type 'ATm 0'"
+
 partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm n)
   | `(atm| $id:ident) => do
-    let id := id.getId
-    if let some ⟨n, i⟩ := cx.getFinIdx? id then
+    let id' := id.getId
+    if let some ⟨n, i⟩ := cx.getFinIdx? id' then
       return ⟨n, ATm.var i⟩
     else
-      let ttype ← instantiateMVars (← getConstInfo id).type
-      if ← isDefEq ttype q(ATm 0) then
-        try
-          let myterm : ATm 0 ← unsafe evalConst (ATm 0) id
-          let n := cx.length
-          let h : 0 + n = n := by omega
-          return ⟨n, h ▸ (myterm.shift n)⟩
-        catch _ => throwError "Something went wrong when evaluating constant '{id}'"
-    throwError "Unexpected identifier '{id}', context: {cx.toStr}"
+      try
+        let myterm : ATm 0 ← evalConstATm id'
+        let n := cx.length
+        return ⟨n, (Nat.zero_add n) ▸ (myterm.shift n)⟩
+      catch _ => throwErrorAt id "Unexpected identifier '{id'}', context: {cx.toStr}"
   | `(atm| ($t:atm)) => elabATm cx t
   -- types
   | `(atm| 𝟘) => do
@@ -65,6 +66,16 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, piE⟩
     else
       throwErrorAt B m!"Context length mismatch: expected {n'}+1, got {n}"
+  | `(atm| Σ ($id:ident : $A:atm; $B:atm)) => do
+    let ⟨n, AE⟩ ← elabATm cx A
+    let id' := id.getId
+    let ⟨n', BE⟩ ← elabATm (cx.extend id') B
+    if h : n+1 = n' then
+      let bbE : (ATm (n+1)) := h ▸ BE
+      let sigmaE : (ATm n) := ATm.sigma AE bbE
+      return ⟨n, sigmaE⟩
+    else
+      throwErrorAt B m!"Context length mismatch: expected {n'}+1, got {n}"
   --terms
   | `(atm| ⋆) => do
     let n : Nat := cx.length
@@ -85,16 +96,35 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, lamE⟩
     else
       throwErrorAt b m!"Context length mismatch: expected {n'}+1, got {n}"
+  | `(atm| $f:atm $a:atm) => do
+    let ⟨n, fE⟩ ← elabATm cx f
+    let ⟨n', aE⟩ ← elabATm cx a
+    if h : n = n' then
+      let aE' : (ATm n) := h ▸ aE
+      let appE : (ATm n) := ATm.app fE aE'
+      return ⟨n, appE⟩
+    else
+      throwErrorAt a m!"Term missmatch: expected context length {n}, got {n'}"
+  | `(atm| ($a:atm & $b:atm) :: $A:atm) => do
+    let ⟨n, aE⟩ ← elabATm cx a
+    let ⟨n', bE⟩ ← elabATm cx b
+    let ⟨n'', AE⟩ ← elabATm cx A
+    if h : n = n' ∧ n = n'' then
+      let bE' : (ATm n) := h.left ▸ bE
+      let AE' : (ATm n) := h.right ▸ AE
+      let pairE : (ATm n) := ATm.pairSigma aE bE' AE'
+      return ⟨n, pairE⟩
+    else
+      throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"
   | _ => throwUnsupportedSyntax
 
-elab "[ttm|" t:atm "]" : term => do
+elab "[atm|" t:atm "]" : term => do
   let ⟨_, atm⟩ ← elabATm [] t
   return Lean.toExpr atm
 
-def myunit : ATm 0 := [ttm| 𝟙]
-def uhhh : ATm 0 := [ttm| myunit]
-example : ATm 0 := [ttm| λ (x : myunit). x]
-example : ATm 0 := [ttm| Π (x : 𝒰; x)]
+def testunit : ATm 0 := [atm| 𝟙]
+example : ATm 0 := [atm| λ (x : testunit). x]
+example : ATm 0 := [atm| Π (x : 𝒰; x)]
 
 partial def elabACtx (cx : ElabCtx) : TSyntax `actx → TermElabM (ElabCtx × ((n : Nat) × ACtx n))
   | `(actx| ε) => do
@@ -163,5 +193,3 @@ macro_rules
     `(def $ttm_id:ident := [tt| $cx ⊢ $t : $T]
       #guard_msgs(drop error) in
       theorem $id : ($ttm_id).Γ ⊢ ($ttm_id).t ∶ ($ttm_id).T := ($ttm_id).hasType)
-
-ttheorem test8 : ε ⬝ (x : 𝟙) ⬝ (y : 𝒰) ⬝ (w : myunit) ⊢ w : myunit
