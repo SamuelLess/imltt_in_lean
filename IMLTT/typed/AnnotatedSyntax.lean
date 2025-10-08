@@ -92,6 +92,7 @@ syntax atm " → " atm : atm -- nondependent Pi type
 syntax "Π" "(" ident ":" atm ";"  atm ")" : atm
 syntax "Σ" "(" ident ":" atm ";"  atm ")" : atm
 -- 'terms'
+syntax "(" atm ")" : atm
 syntax ident : atm
 syntax "⋆" : atm
 syntax "ind𝟘" atm atm atm : atm
@@ -102,7 +103,11 @@ syntax "(" atm "&" atm ")" "::" atm : atm
 syntax "indΣ" atm atm atm atm atm : atm
 syntax "𝓏" : atm
 syntax "𝓈(" atm ")" : atm
-syntax "(" atm ")" : atm
+syntax "ind𝒩" atm atm atm atm : atm
+syntax "refl" atm atm : atm
+syntax "j" atm atm atm atm atm atm : atm
+syntax atm "⌈" term "⌉" : atm
+syntax atm "⌊" term "⌋" : atm
 
 #check_failure `(atm|𝟙 → 𝟙)
 #check_failure `(atm|Π(x : 𝟙;𝟙))
