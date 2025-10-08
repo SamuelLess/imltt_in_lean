@@ -55,6 +55,16 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
   | `(atm| 𝒰) => do
     let n : Nat := cx.length
     return ⟨n, .univ⟩
+  | `(atm| $A:atm → $B:atm) => do
+    let ⟨n, AE⟩ ← elabATm cx A
+    let ⟨n', BE⟩ ← elabATm (cx.extend Name.anonymous) B
+    --if ← isDefEq q($n') q($n+1) then
+    if h : n+1 = n' then
+      let bbE : (ATm (n+1)) := h ▸ BE
+      let piE : (ATm n) := ATm.pi AE bbE
+      return ⟨n, piE⟩
+    else
+      throwErrorAt B m!"Context length mismatch: expected {n'}+1, got {n}"
   | `(atm| Π ($id:ident : $A:atm; $B:atm)) => do
     let ⟨n, AE⟩ ← elabATm cx A
     let id' := id.getId
@@ -77,15 +87,13 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     else
       throwErrorAt B m!"Context length mismatch: expected {n'}+1, got {n}"
   --terms
+  -- syntax "⋆" : atm
   | `(atm| ⋆) => do
     let n : Nat := cx.length
     return ⟨n, .tt⟩
-  | `(atm| 𝓏) => do
-    let n : Nat := cx.length
-    return ⟨n, .zeroNat⟩
-  | `(atm| 𝓈($t:atm)) => do
-    let ⟨n, t⟩ ← elabATm cx t
-    return ⟨n, .succNat t⟩
+  -- TODO: syntax "ind𝟘" atm atm atm : atm
+  -- TODO: syntax "ind𝟙" atm atm atm : atm
+  -- syntax "λ " "(" ident " : " atm  ")" ". " atm : atm
   | `(atm| λ ($id:ident : $A:atm). $b:atm) => do
     let ⟨n, AE⟩ ← elabATm cx A
     let id' := id.getId
@@ -96,6 +104,7 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, lamE⟩
     else
       throwErrorAt b m!"Context length mismatch: expected {n'}+1, got {n}"
+  -- syntax atm atm : atm
   | `(atm| $f:atm $a:atm) => do
     let ⟨n, fE⟩ ← elabATm cx f
     let ⟨n', aE⟩ ← elabATm cx a
@@ -105,6 +114,7 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, appE⟩
     else
       throwErrorAt a m!"Term missmatch: expected context length {n}, got {n'}"
+  -- syntax "(" atm "&" atm ")" "::" atm : atm
   | `(atm| ($a:atm & $b:atm) :: $A:atm) => do
     let ⟨n, aE⟩ ← elabATm cx a
     let ⟨n', bE⟩ ← elabATm cx b
@@ -116,6 +126,18 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, pairE⟩
     else
       throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"
+  -- TODO: syntax "indΣ" atm atm atm atm atm : atm
+  -- syntax "𝓏" : atm
+  | `(atm| 𝓏) => do
+    let n : Nat := cx.length
+    return ⟨n, .zeroNat⟩
+  -- syntax "𝓈(" atm ")" : atm
+  | `(atm| 𝓈($t:atm)) => do
+    let ⟨n, t⟩ ← elabATm cx t
+    return ⟨n, .succNat t⟩
+  -- TODO: syntax "ind𝒩" atm atm atm atm : atm
+  -- TODO: syntax "refl" atm atm : atm
+  -- TODO: syntax "j" atm atm atm atm atm atm : atm
   | _ => throwUnsupportedSyntax
 
 elab "[atm|" t:atm "]" : term => do
