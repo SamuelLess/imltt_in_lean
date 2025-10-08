@@ -91,9 +91,27 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
   | `(atm| ⋆) => do
     let n : Nat := cx.length
     return ⟨n, .tt⟩
-  -- TODO: syntax "ind𝟘" atm atm atm : atm
-  -- TODO: syntax "ind𝟙" atm atm atm : atm
-  -- syntax "λ " "(" ident " : " atm  ")" ". " atm : atm
+  -- syntax "ind0" "(" ident atm atm ")": atm
+  | `(atm| ind0 ($id:ident $P:atm $b:atm)) => do
+    let ⟨nP, PE⟩ ← elabATm (cx.extend id.getId) P
+    let ⟨nb, bE⟩ ← elabATm cx b
+    if h : nb + 1 = nP then
+      let PE' : ATm (nb+1) := h ▸ PE
+      return ⟨nb, ATm.indEmpty PE' bE⟩
+    else
+      throwErrorAt P m!"Context length mismatch in ind𝟘: expected {nb}+1, got {nP}"
+  -- syntax "ind1" "(" ident atm atm atm ")" : atm
+  | `(atm| ind1($id:ident $P:atm $z:atm $c:atm)) => do
+    let ⟨nP, PE⟩ ← elabATm (cx.extend id.getId) P
+    let ⟨nz, zE⟩ ← elabATm cx z
+    let ⟨nc, cE⟩ ← elabATm cx c
+    if h : nP = nz + 1 ∧ nc = nz then
+      let PE' : ATm (nz+1) := h.left ▸ PE
+      let cE' : ATm nz := h.right ▸ cE
+      return ⟨nz, ATm.indUnit PE' zE cE'⟩
+    else
+      throwErrorAt P m!"Context length mismatch in ind𝟙 motive: expected {nz}+1, got {nP}"
+  -- syntax "λ " "(" ident " : " atm  ")" "." atm : atm
   | `(atm| λ ($id:ident : $A:atm). $b:atm) => do
     let ⟨n, AE⟩ ← elabATm cx A
     let id' := id.getId
@@ -104,8 +122,8 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, lamE⟩
     else
       throwErrorAt b m!"Context length mismatch: expected {n'}+1, got {n}"
-  -- syntax atm atm : atm
-  | `(atm| $f:atm $a:atm) => do
+  -- syntax atm "◃" atm : atm
+  | `(atm| $f:atm ◃ $a:atm) => do
     let ⟨n, fE⟩ ← elabATm cx f
     let ⟨n', aE⟩ ← elabATm cx a
     if h : n = n' then
@@ -126,7 +144,21 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, pairE⟩
     else
       throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"
-  -- TODO: syntax "indΣ" atm atm atm atm atm : atm
+  -- syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
+  | `(atm| indS($a:ident $b:ident $pid:ident $A:atm $B:atm $C:atm $c:atm $p:atm)) => do
+    let ⟨n, tA⟩ ← elabATm cx A
+    let ⟨nB, tB⟩ ← elabATm (cx.extend a.getId) B
+    let ⟨nC, tC⟩ ← elabATm (cx.extend pid.getId) C
+    let ⟨nc, tc⟩ ← elabATm (cx.extend a.getId |>.extend b.getId) c
+    let ⟨np, tp⟩ ← elabATm cx p
+    if h : n + 1 = nB ∧ n + 1 = nC ∧ n + 2 = nc ∧ n = np then
+      let tB' : ATm (n+1) := h.left ▸ tB
+      let tC' : ATm (n+1) := h.right.left ▸ tC
+      let tc' : ATm (n+2) := h.right.right.left ▸ tc
+      let tp' : ATm n := h.right.right.right ▸ tp
+      return ⟨n, ATm.indSigma tA tB' tC' tc' tp'⟩
+    else
+      throwError m!"Context length mismatch in ind1"
   -- syntax "𝓏" : atm
   | `(atm| 𝓏) => do
     let n : Nat := cx.length
@@ -135,9 +167,45 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
   | `(atm| 𝓈($t:atm)) => do
     let ⟨n, t⟩ ← elabATm cx t
     return ⟨n, .succNat t⟩
-  -- TODO: syntax "ind𝒩" atm atm atm atm : atm
-  -- TODO: syntax "refl" atm atm : atm
-  -- TODO: syntax "j" atm atm atm atm atm atm : atm
+  -- syntax "indN" "(" ident ident atm atm atm atm ")" : atm
+  | `(atm| indN($nId:ident $aId:ident $A:atm $z:atm $s:atm $n:atm)) => do
+    let ⟨nA, tA⟩ ← elabATm (cx.extend nId.getId) A
+    let ⟨nz, tz⟩ ← elabATm cx z
+    let ⟨ns, ts⟩ ← elabATm (cx.extend aId.getId |>.extend aId.getId) s
+    let ⟨nn, tn⟩ ← elabATm cx n
+    if h : nz + 1 =  nA ∧ nz + 2  = ns ∧ nz = nn then
+      let tA' : ATm (nz+1) := h.left ▸ tA
+      let ts' : ATm (nz+2) := h.right.left ▸ ts
+      let tn' : ATm nz := h.right.right ▸ tn
+      return ⟨nz, ATm.indNat tA' tz ts' tn'⟩
+    else
+      throwError m!"Context length mismatch in indN"
+  -- syntax "refl" "(" atm atm ")" : atm
+  | `(atm| refl($A:atm $a:atm)) => do
+    let ⟨nA, tA⟩ ← elabATm cx A
+    let ⟨na, ta⟩ ← elabATm cx a
+    if h : nA = na then
+      let ta' : ATm nA := h ▸ ta
+      return ⟨nA, ATm.refl tA ta'⟩
+    else
+      throwErrorAt a m!"Term missmatch in refl: expected context length {nA}, got {na}"
+  -- syntax "j" "(" ident ident ident atm atm atm atm atm atm ")" : atm
+  | `(atm| j ($AId:ident $AshiftId:ident $IdAId:ident $A:atm $B:atm $b:atm $a:atm $a':atm $p:atm)) => do
+    let ⟨nA, tA⟩ ← elabATm cx A
+    let ⟨nB, tB⟩ ← elabATm (cx.extend AId.getId |>.extend AshiftId.getId |>.extend IdAId.getId) B
+    let ⟨nb, tb⟩ ← elabATm (cx.extend AId.getId) b
+    let ⟨na, ta⟩ ← elabATm cx a
+    let ⟨na', ta'⟩ ← elabATm cx a'
+    let ⟨np, tp⟩ ← elabATm cx p
+    if h : nA + 3 = nB ∧ nA +1 = nb ∧ nA = na ∧ nA = na' ∧ nA = np then
+      let tB' : ATm (nA+3) := h.left ▸ tB
+      let tb' : ATm (nA+1) := h.right.left ▸ tb
+      let tap : ATm nA := h.right.right.left ▸ ta
+      let ta'' : ATm nA := h.right.right.right.left ▸ ta'
+      let tp' : ATm nA := h.right.right.right.right ▸ tp
+      return ⟨nA, ATm.j tA tB' tb' tap ta'' tp'⟩
+    else
+      throwError m!"Context length mismatch in j"
   | _ => throwUnsupportedSyntax
 
 elab "[atm|" t:atm "]" : term => do
