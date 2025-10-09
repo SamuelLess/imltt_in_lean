@@ -19,8 +19,8 @@ inductive ATm : Nat → Type where
   -- λx:A. b B where b⌈x⌉ : B⌈x⌉
   | lam : ATm n → ATm (n + 1) → ATm n -- added λ type annotation
   | app : ATm n → ATm n → ATm n
-  -- a & b : Σ (dependent)
-  | pairSigma : ATm n → ATm n → ATm n → ATm n -- add Σ type annotation
+  -- a & b : B (as non substituted) (dependent)
+  | pairSigma : ATm n → ATm n → ATm (n+1) → ATm n -- add Σ type annotation
   -- (Γ ⊢ A) (Γ ⬝ A ⊢ B) ⬝ (Γ ⬝ ΣA;B ⊢ C) (Γ⬝ A ⬝ B ⊢ c : C) (Γ ⊢ p : ΣA;B)
   | indSigma: ATm n → ATm (n + 1) → ATm (n + 1) → ATm (n + 2) → ATm n → ATm n
   | zeroNat : ATm n
@@ -73,7 +73,7 @@ def ATm.shift {n} (k : Nat) : ATm n → ATm (n + k)
   | .indEmpty P c => .indEmpty (h ▸ P.shift k) (c.shift k)
   | .lam A b => .lam (A.shift k) (h ▸ b.shift k)
   | .app f a => .app (f.shift k) (a.shift k)
-  | .pairSigma a b A => .pairSigma (a.shift k) (b.shift k) (A.shift k)
+  | .pairSigma a b B => .pairSigma (a.shift k) (b.shift k) (h ▸ B.shift k)
   | .indSigma A P cs C p => .indSigma (A.shift k) (h ▸ P.shift k) (h ▸ cs.shift k) (h' ▸ C.shift k) (p.shift k)
   | .zeroNat => .zeroNat
   | .succNat n => .succNat (n.shift k)
@@ -133,3 +133,7 @@ declare_syntax_cat actx (behavior := both)
 
 syntax "ε" : actx
 syntax actx "⬝" "(" ident ":" atm ")" : actx
+
+theorem toCtx_extend {n} (Γ : ACtx n) (x : Name) (T : ATm n) :
+    (Γ.extend x  T).toCtx = (Γ.toCtx).extend T.toTm := by
+  simp [ACtx.toCtx]
