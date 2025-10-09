@@ -101,6 +101,7 @@ syntax "ind1" "(" ident atm atm atm ")" : atm
 syntax "λ " "(" ident " : " atm  ")" "." atm : atm
 syntax atm "◃" atm : atm
 syntax "(" atm "&" atm ")" "::" atm : atm
+syntax "(" atm "&" atm ")" "::" ident "→" atm : atm
 syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
 syntax "𝓏" : atm
 syntax "𝓈(" atm ")" : atm

@@ -135,7 +135,7 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
   | `(atm| ($a:atm & $b:atm) :: $B:atm) => do
     let ⟨n, aE⟩ ← elabATm cx a
     let ⟨n', bE⟩ ← elabATm cx b
-    let ⟨n'', BE⟩ ← elabATm cx B
+    let ⟨n'', BE⟩ ← elabATm (cx.extend Name.anonymous) B
     if h : n = n' ∧ n + 1 = n'' then
       let bE' : ATm n := h.left ▸ bE
       let AE' : ATm (n+1) := h.right ▸ BE
@@ -143,6 +143,18 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, pairE⟩
     else
       throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"
+  | `(atm| ($a:atm & $b:atm) :: $id → $B:atm) => do
+    let ⟨n, aE⟩ ← elabATm cx a
+    let ⟨n', bE⟩ ← elabATm cx b
+    let ⟨n'', BE⟩ ← elabATm (cx.extend id.getId) B
+    if h : n = n' ∧ n + 1 = n'' then
+      let bE' : ATm n := h.left ▸ bE
+      let AE' : ATm (n+1) := h.right ▸ BE
+      let pairE : ATm n := ATm.pairSigma aE bE' AE'
+      return ⟨n, pairE⟩
+    else
+      throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"
+  -- syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
   -- syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
   | `(atm| indS($a:ident $b:ident $pid:ident $A:atm $B:atm $C:atm $c:atm $p:atm)) => do
     let ⟨n, tA⟩ ← elabATm cx A

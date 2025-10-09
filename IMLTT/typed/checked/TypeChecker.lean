@@ -64,12 +64,12 @@ mutual
     | 0, _, _, _ => .error "has_type: out of fuel"
     -- variables
     | _+1, .empty, .var i, T => .error s!"has_type: can't have v({i}) in empty context"
-    | f+1, Γ ⬝a T, .var ⟨0,_⟩, T' =>  do
+    | f+1, ACtx.extend _ Γ T, .var ⟨0,_⟩, T' =>  do
       let is_type_T ← is_type f _ Γ T
       let is_eq_type_T_T' ← is_eq_type f (Γ ⬝a T) (T⌊ₐ↑ₚidₚ⌋) T'
       have has_type_T := HasType.var is_type_T.down
       return .up <| HasType.ty_conv has_type_T ((toTm_weak _ _) ▸ is_eq_type_T_T'.down)
-    | f+1, Γ ⬝a T, .var ⟨i+1, hi⟩, T' => do
+    | f+1, ACtx.extend _ Γ T, .var ⟨i+1, hi⟩, T' => do
       let ⟨T'', h⟩ ← infer_type f Γ (.var ⟨i, (Nat.succ_lt_succ_iff.mp hi)⟩)
       let is_type_T ← is_type f _ Γ T
       let is_eq_type_T ← is_eq_type f (Γ ⬝a T) (T''⌊ₐ↑ₚidₚ⌋) T'
@@ -102,11 +102,11 @@ mutual
       let sig_intro := HasType.sigma_intro ha ((toTm_subst _ _) ▸ hb.down) hb_type.down
       let is_eq_type_S ← is_eq_type f Γ (.sigma A B) S
       return .up <| HasType.ty_conv sig_intro is_eq_type_S.down
-    /-| f+1, Γ, Tm.refl A a, a' ≃[A'] a'' => do
+    | f+1, Γ, ATm.refl A a, ATm.iden A' a' a'' => do
       let is_type_A ← is_type f _ Γ A
       let has_type_a ← has_type f Γ a A
-      have t : Γ ⊢ A.refl a ∶ a' ≃[A'] a'' := by
-        apply HasType.ty_conv (B:=a' ≃[A'] a'')
+      have t : Γ.toCtx ⊢ (A.refl a).toTm ∶  (A'.iden a' a'').toTm := by
+        apply HasType.ty_conv (B:=(A'.iden a' a'').toTm)
         apply HasType.iden_intro is_type_A.down has_type_a.down
         apply IsEqualType.iden_form_eq
         · exact (← is_eq_type f Γ A A').down
@@ -114,36 +114,36 @@ mutual
         · exact (← is_eq_term f Γ a a'' A').down
       return .up <| t
     -- univ intro rules
-    | f+1, Γ, 𝟘, Univ => do
+    | f+1, Γ, .empty, Univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type_U ← is_eq_type f Γ 𝒰 Univ
+      let is_eq_type_U ← is_eq_type f Γ .univ Univ
       return .up <| HasType.ty_conv (HasType.univ_empty ctx_ok.down) is_eq_type_U.down
-    | f+1, Γ, 𝟙, Univ => do
+    | f+1, Γ, .unit, Univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type_U ← is_eq_type f Γ 𝒰 Univ
+      let is_eq_type_U ← is_eq_type f Γ .univ Univ
       return .up <| HasType.ty_conv (HasType.univ_unit ctx_ok.down) is_eq_type_U.down
-    | f+1, Γ, 𝒩, Univ => do
+    | f+1, Γ, .nat, Univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type_U ← is_eq_type f Γ 𝒰 Univ
+      let is_eq_type_U ← is_eq_type f Γ .univ Univ
       return .up <| HasType.ty_conv (HasType.univ_nat ctx_ok.down) is_eq_type_U.down
-    | f+1, Γ, ΠA;B , Univ => do
+    | f+1, Γ, .pi A B , Univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type_U ← is_eq_type f Γ 𝒰 Univ
-      let has_type_A_U ← has_type f Γ A 𝒰
-      let has_type_B_U ← has_type f (Γ ⬝ A) B 𝒰
+      let is_eq_type_U ← is_eq_type f Γ .univ Univ
+      let has_type_A_U ← has_type f Γ A .univ
+      let has_type_B_U ← has_type f (Γ ⬝a A) B .univ
       return .up <| HasType.ty_conv
         (HasType.univ_pi has_type_A_U.down has_type_B_U.down) is_eq_type_U.down
-    | f+1, Γ, ΣA;B , Univ => do
+    | f+1, Γ, .sigma A B , Univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type_U ← is_eq_type f Γ 𝒰 Univ
-      let has_type_A_U ← has_type f Γ A 𝒰
-      let has_type_B_U ← has_type f (Γ ⬝ A) B 𝒰
+      let is_eq_type_U ← is_eq_type f Γ .univ Univ
+      let has_type_A_U ← has_type f Γ A .univ
+      let has_type_B_U ← has_type f (Γ ⬝a A) B .univ
       return .up <| HasType.ty_conv
         (HasType.univ_sigma has_type_A_U.down has_type_B_U.down) is_eq_type_U.down
-    | f+1, Γ, a ≃[A] a' , Univ => do
+    | f+1, Γ, .iden A a a' , Univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type_U ← is_eq_type f Γ 𝒰 Univ
-      let has_type_A_U ← has_type f Γ A 𝒰
+      let is_eq_type_U ← is_eq_type f Γ .univ Univ
+      let has_type_A_U ← has_type f Γ A .univ
       let has_type_a_A ← has_type f Γ a A
       let has_type_a'_A ← has_type f Γ a' A
       return .up <| HasType.ty_conv
@@ -151,53 +151,73 @@ mutual
     -- elim rules
     | f+1, Γ, .indEmpty A a, B => do
       return .up <| by
-        apply HasType.ty_conv (B:=B)
+        apply HasType.ty_conv (B:=B.toTm)
         apply HasType.empty_elim
-        · exact (← is_type f _ (Γ ⬝ 𝟘) A).down
-        · exact (← has_type f Γ a 𝟘).down
-        · exact (← is_eq_type f Γ (A⌈a⌉₀) B).down
+        · exact (← is_type f _ (Γ ⬝a .empty) A).down
+        · exact (← has_type f Γ a .empty).down
+        · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (A⌈ₐa⌉₀) B).down
     | f+1, Γ, .indUnit A b a, B => do
       return .up <| by
-        apply HasType.ty_conv (B:=B)
+        apply HasType.ty_conv (B:=B.toTm)
         apply HasType.unit_elim
-        · exact (← is_type f _ (Γ ⬝ 𝟙) A).down
-        · exact (← has_type f Γ a (A⌈⋆⌉₀)).down
-        · exact (← has_type f Γ b 𝟙).down
-        · exact (← is_eq_type f Γ (A⌈b⌉₀) B).down
-    | f+1, Γ, g ◃ a, B' => do
-      let ⟨ΠA;B, hg⟩ ← infer_type f Γ g
-        | .error s!"has_type: expected lambda term at {g}"
+        · exact (← is_type f _ (Γ ⬝a .unit) A).down
+        · let h := (← has_type f Γ a (A⌈ₐ.tt⌉₀)).down
+          rewrite [toTm_subst] at h
+          exact h
+        · exact (← has_type f Γ b .unit).down
+        · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (A⌈ₐb⌉₀) B).down
+    | f+1, Γ, .app g a, B' => do
+      let ⟨.pi A B, hg⟩ ← infer_type f Γ g
+        | .error s!"has_type: expected lambda term at {g.toTm}"
       let has_type_a ← has_type f Γ a A
       have pi_elim := HasType.pi_elim hg has_type_a.down
-      let is_eq_type_B ← is_eq_type f Γ (B⌈a⌉₀) B'
-      return .up <| HasType.ty_conv pi_elim is_eq_type_B.down
+      let is_eq_type_B ← is_eq_type f Γ (B⌈ₐa⌉₀) B'
+      return .up <| HasType.ty_conv pi_elim <| (toTm_subst _ _) ▸ is_eq_type_B.down
     | f+1, Γ, .indSigma A B C c p, C' => do
       return .up <| by
-        apply HasType.ty_conv (B:=C')
+        apply HasType.ty_conv (B:=C'.toTm)
         apply HasType.sigma_elim
-        · exact (← is_type f _ (Γ ⬝ ΣA;B) C).down
-        · exact (← has_type f (Γ ⬝ A ⬝ B) c (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)).down
-        · exact (← has_type f Γ p (ΣA;B)).down
-        · exact (← is_eq_type f Γ (C⌈p⌉₀) C').down
+        · exact (← is_type f _ (Γ ⬝a .sigma A B) C).down
+        · let h := (← has_type f ((Γ ⬝a A) ⬝a B) c (C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ (.pairSigma (.var 1) (.var 0) (B⌊ₐ↑ₚ↑ₚidₚ⌋))⌉)).down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          sorry -- FIXME: this will be fixed with the more general statement of toTm_subst
+        · exact (← has_type f Γ p (.sigma A B)).down
+        · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (C⌈ₐp⌉₀) C').down
     | f+1, Γ, .indNat A z s n, A' => do
       return .up <| by
-        apply HasType.ty_conv (B:=A')
+        apply HasType.ty_conv (B:=A'.toTm)
         apply HasType.nat_elim
-        · exact (← is_type f _ (Γ ⬝ 𝒩) A).down
-        · exact (← has_type f Γ z (A⌈𝓏⌉₀)).down
-        · exact (← has_type f (Γ ⬝ 𝒩 ⬝ A) s (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)).down
-        · exact (← has_type f Γ n 𝒩).down
-        · exact (← is_eq_type f Γ (A⌈n⌉₀) A').down
+        · exact (← is_type f _ (Γ ⬝a .nat) A).down
+        · let h := (← has_type f Γ z (A⌈ₐ .zeroNat⌉₀)).down
+          rewrite [toTm_subst] at h
+          exact h
+        · let h := (← has_type f ((Γ ⬝a .nat) ⬝a A) s (A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (.succNat <| .var 0)⌉⌊ₐ↑ₚidₚ⌋)).down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          sorry -- FIXME: this will be fixed with the more general statement of toTm_subst
+        · exact (← has_type f Γ n .nat).down
+        · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (A⌈ₐn⌉₀) A').down
     | f+1, Γ, .j A B b a a' p, B' => do
       return .up <| by
-        apply HasType.ty_conv (B:=B')
+        apply HasType.ty_conv (B:=B'.toTm)
         apply HasType.iden_elim
-        · exact (← is_type f _ (Γ ⬝ A ⬝ A⌊↑ₚidₚ⌋ ⬝ v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0)) B).down
-        · exact (← has_type f (Γ ⬝ A) b (B⌈(ₛidₚ)⋄ v(0)⋄ .refl (A⌊↑ₚidₚ⌋) v(0)⌉)).down
+        · let h := (← is_type f _ (((Γ ⬝a A) ⬝a A⌊ₐ↑ₚidₚ⌋) ⬝a (.iden (A⌊ₐ↑ₚ↑ₚidₚ⌋) (.var 1) (.var 0))) B).down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toTm_weak] at h
+          simp [ATm.toTm] at h
+          rewrite [toTm_weak] at h
+          exact h
+        · let h := (← has_type f (Γ ⬝a A) b (B⌈ₐ(ₐₛidₚ)⋄ₐ (.var 0)⋄ₐ .refl (A⌊ₐ↑ₚidₚ⌋) (.var 0)⌉)).down
+          rewrite [toCtx_extend] at h
+          sorry -- FIXME: this might be fixed with the more general statement of toTm_subst
         · exact (← has_type f Γ a A).down
         · exact (← has_type f Γ a' A).down
-        · exact (← has_type f Γ p (a ≃[A] a')).down
-        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a⋄ a'⋄ p⌉) B').down-/
+        · exact (← has_type f Γ p (.iden A a a')).down
+        · let h := (← is_eq_type f Γ (B⌈ₐ(ₐₛidₚ)⋄ₐ a⋄ₐ a'⋄ₐ p⌉) B').down
+          sorry -- FIXME: this will be fixed with the more general statement of toTm_subst
     | _, _, t, T => .error s!"has_type: unsupported pattern {t.toTm} ∶ {T.toTm}"
   termination_by structural fuel
 
@@ -222,24 +242,24 @@ mutual
       let eq_type_A ← is_eq_type f (Γ) A A'
       let eq_type_B ← is_eq_type f (Γ ⬝a A) B B'
       return .up <| IsEqualType.pi_form_eq eq_type_A.down eq_type_B.down
-    /-| f+1, Γ, ΣA;B, ΣA';B' => do
+    | f+1, Γ, .sigma A B, .sigma A' B' => do
       let eq_type_A ← is_eq_type f (Γ) A A'
-      let eq_type_B ← is_eq_type f (Γ ⬝ A) B B'
+      let eq_type_B ← is_eq_type f (Γ ⬝a A) B B'
       return .up <| IsEqualType.sigma_form_eq eq_type_A.down eq_type_B.down
-    | f+1, Γ, a₁ ≃[A] a₃, a₂ ≃[A'] a₄ => do
+    | f+1, Γ, .iden A a₁ a₃, .iden A' a₂ a₄ => do
       let eq_type_A ← is_eq_type f Γ A A'
       let eq_term <- is_eq_term f Γ a₁ a₂ A
       let eq_term' <- is_eq_term f Γ a₃ a₄ A'
       return .up <| IsEqualType.iden_form_eq eq_type_A.down eq_term.down eq_term'.down
     -- TODO: check if more patterns are needed here
-    | f+1, Γ ⬝ T, v(i), T' => do
-      let ⟨𝒰, _⟩ ← infer_type f (Γ ⬝ T) v(i)
+    | f+1, ACtx.extend _ Γ T, .var i, T' => do
+      let ⟨.univ, _⟩ ← infer_type f (Γ ⬝a T) <| .var i
         | .error s!"is_eq_type: expected 𝒰 at v({i})"
-      let eq_term_in_𝒰 ← is_eq_term f (Γ ⬝ T) v(i) T' 𝒰
+      let eq_term_in_𝒰 ← is_eq_term f (Γ ⬝a T) (.var i) T' .univ
       return .up <| IsEqualType.univ_elim_eq eq_term_in_𝒰.down
-    | f+1, Γ, g◃x, T => do
-      let eq_term_in_𝒰 ← is_eq_term f Γ (g◃x) T 𝒰
-      return .up <| IsEqualType.univ_elim_eq eq_term_in_𝒰.down-/
+    | f+1, Γ, .app g x, T => do
+      let eq_term_in_𝒰 ← is_eq_term f Γ (.app g x) T .univ
+      return .up <| IsEqualType.univ_elim_eq eq_term_in_𝒰.down
     | f+1, Γ, T, T' => do
       let is_eq_symm ← is_eq_type f Γ T' T
       return .up <| IsEqualType.type_symm is_eq_symm.down

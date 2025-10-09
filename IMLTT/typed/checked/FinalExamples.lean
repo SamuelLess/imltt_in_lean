@@ -12,7 +12,7 @@ ttheorem wisunit : ε ⬝ (x : 𝟙) ⬝ (y : 𝒰) ⬝ (w : myunit) ⊢ w : �
 
 ttheorem myid : ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ IdA ◃ a : A
 
-def starp := [atm| (⋆ & ⋆)::Σ(s:𝟙;𝟙)]
+def starp := [atm| (⋆ & ⋆):: 𝟙]
 
 ttheorem starpair : ε ⊢ (⋆ & ⋆)::𝟙 : Σ(x : 𝟙; 𝟙)
 
