@@ -130,6 +130,13 @@ def ACtx.toNameList : ACtx n → List Name
   | .empty => []
   | .extend name Γ _ => name :: Γ.toNameList
 
+def ACtx.toString {n} : ACtx n → String
+  | .empty => "ε"
+  | .extend name Γ T => s!"{Γ.toString} ⬝ ({name} : {T.toTm})"
+
+instance : ToString (ACtx n) where
+  toString := ACtx.toString
+
 declare_syntax_cat actx (behavior := both)
 
 syntax "ε" : actx

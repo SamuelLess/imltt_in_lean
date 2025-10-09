@@ -4,7 +4,7 @@ import IMLTT.typed.checked.Elaboration
 
 def my_id := [atm| λ (T : 𝒰). λ (x : T) . x]
 
-ttheorem uid : ε ⬝ (myT : 𝒰) ⬝ (x : myT) ⊢ (my_id ◃ myT ◃ x) : myT
+ttheorem uid : ε ⬝ (myT : 𝒰) ⬝ (x : myT) ⊢ ((my_id ◃ myT) ◃ x) : myT
 
 def myunit := [atm| 𝟙]
 

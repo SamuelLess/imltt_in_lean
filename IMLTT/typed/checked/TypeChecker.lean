@@ -269,37 +269,46 @@ mutual
       (a : ATm n) (a' : ATm n) (A : ATm n) : Except String (PLift (Γ.toCtx ⊢ a.toTm ≡ a'.toTm ∶ A.toTm)) :=
     match fuel, Γ, a, a', A with
     | 0, Γ, a, a', A =>
-      .error s!"is_eq_term: out of fule with {repr Γ} ⊢ {a.toTm} ≡ {a'.toTm} : {A.toTm}"
+      .error s!"is_eq_term: out of fuel with {Γ} ⊢ {a.toTm} ≡ {a'.toTm} : {A.toTm}"
     -- variables
     | f+1, Γ ⬝a T, .var 0, .var 0, T' => do
       let is_type_T ← is_type f _ Γ T
       let is_eq_T_T' ← is_eq_type f (Γ ⬝a T) (T⌊ₐ↑ₚidₚ⌋) T'
       have := IsEqualTerm.var_eq is_type_T.down
       return .up <| IsEqualTerm.ty_conv_eq this ((toTm_weak _ _) ▸ is_eq_T_T'.down)
-    /-| f+1, Γ ⬝a T, .var ⟨i+1,hi⟩, .var ⟨j+1,hj⟩, T' => do
+    | f+1, Γ ⬝a T, .var ⟨i+1,hi⟩, .var ⟨j+1,hj⟩, T' => do
       if hieqj : i == j then
         let ⟨Tvi, htvi⟩ ← infer_type f Γ (.var (⟨i, (Nat.succ_lt_succ_iff.mp hi)⟩))
-        have t : Γ ⬝ T ⊢ v(⟨i+1, hi⟩) ≡ v(⟨j+1, hj⟩) ∶ T' := by
+        have t : (Γ ⬝a T).toCtx ⊢ v(⟨i+1, hi⟩) ≡ v(⟨j+1, hj⟩) ∶ T'.toTm := by
           simp only [beq_iff_eq.mp hieqj |>.symm]
           rw [←Fin.succ_mk]
           apply IsEqualTerm.ty_conv_eq
           apply IsEqualTerm.weak_eq
           · exact defeq_refl_term htvi
           · exact (← is_type f _ Γ T).down
-          · exact (← is_eq_type f (Γ ⬝ T) (Tvi⌊↑ₚidₚ⌋) T').down
+          · exact (toTm_weak _ _) ▸ (← is_eq_type f (Γ ⬝a T) (Tvi⌊ₐ↑ₚidₚ⌋) T').down
         return .up t
       else
-        .error s!"is_eq_term: two different variables cannot defeq v({i}) ≡ v({j}) ∶ {T'}"-/
+        .error s!"is_eq_term: two different variables cannot defeq v({i}) ≡ v({j}) ∶ {T'.toTm}"
     -- computation rules
-    /-| f+1, Γ, .indUnit A ⋆ a, a', A' => do
-      let is_type_A ← is_type f _ (Γ ⬝ 𝟙) A
-      let has_type_a ← has_type f Γ a (A⌈⋆⌉₀)
-      let is_eq_term_a_a' ← is_eq_term f Γ a a' (A⌈⋆⌉₀)
-      let is_eq_type_A_A' ← is_eq_type f Γ (A⌈⋆⌉₀) A'
-      have unit_comp := IsEqualTerm.unit_comp is_type_A.down has_type_a.down
-      have term_trans := IsEqualTerm.term_trans unit_comp is_eq_term_a_a'.down
-      return .up <| IsEqualTerm.ty_conv_eq term_trans is_eq_type_A_A'.down
-    | f+1, Γ, (λA;b)◃x, t, T => do
+    | f+1, Γ, .indUnit A .tt a, a', A' => do
+      let is_type_A ← is_type f _ (Γ ⬝a .unit) A
+      let has_type_a ← has_type f Γ a (A⌈ₐ.tt⌉₀)
+      let is_eq_term_a_a' ← is_eq_term f Γ a a' (A⌈ₐ.tt⌉₀)
+      let is_eq_type_A_A' ← is_eq_type f Γ (A⌈ₐ.tt⌉₀) A'
+      have unit_comp := IsEqualTerm.unit_comp is_type_A.down <| by
+        let h := has_type_a.down
+        rewrite [toTm_subst] at h
+        exact h
+      have term_trans := IsEqualTerm.term_trans unit_comp <| by
+        let h := is_eq_term_a_a'.down
+        rewrite [toTm_subst] at h
+        exact h
+      return .up <| IsEqualTerm.ty_conv_eq term_trans <| by
+        let h := is_eq_type_A_A'.down
+        rewrite [toTm_subst] at h
+        exact h
+    /-| f+1, Γ, (λA;b)◃x, t, T => do
       let ⟨Π_;B, _⟩ ← infer_type f Γ (λA;b)
         | .error s!"is_eq_term: could not infer type of {λA;b}"
       let has_type_x ← has_type f Γ x A
