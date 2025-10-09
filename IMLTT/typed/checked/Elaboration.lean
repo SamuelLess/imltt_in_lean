@@ -28,7 +28,12 @@ partial def elabTTm (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) :
       let TE : Q(ATm $n) := Lean.toExpr T
       match ← whnf q(has_type 30 $ctxE $tE $TE) with
       | mkApp _ pr =>
-        let ttm := mkApp5 (mkConst ``TTm.mk) (mkNatLit n) ctxE tE TE (← mkAppM ``PLift.down #[pr])
+        let ttm := mkApp5 (mkConst ``TTm.mk)
+          (mkNatLit n)
+          (← mkAppM ``ACtx.toCtx #[ctxE])
+          (← mkAppM ``ATm.toTm #[tE])
+          (← mkAppM ``ATm.toTm #[TE])
+          (← mkAppM ``PLift.down #[pr])
         return ttm
       | _ => throwError "Could not find proof again o.O"
     | Except.error msg =>
