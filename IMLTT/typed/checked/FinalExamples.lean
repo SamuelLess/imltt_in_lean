@@ -1,4 +1,5 @@
-import IMLTT.typed.AnnotatedSyntax
+import IMLTT.typed.annotated.Syntax
+import IMLTT.typed.annotated.Elaboration
 import IMLTT.typed.checked.Elaboration
 
 def my_id := [atm| λ (T : 𝒰). λ (x : T) . x]
