@@ -132,14 +132,14 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     else
       throwErrorAt a m!"Term missmatch: expected context length {n}, got {n'}"
   -- syntax "(" atm "&" atm ")" "::" atm : atm
-  | `(atm| ($a:atm & $b:atm) :: $A:atm) => do
+  | `(atm| ($a:atm & $b:atm) :: $B:atm) => do
     let ⟨n, aE⟩ ← elabATm cx a
     let ⟨n', bE⟩ ← elabATm cx b
-    let ⟨n'', AE⟩ ← elabATm cx A
-    if h : n = n' ∧ n = n'' then
-      let bE' : (ATm n) := h.left ▸ bE
-      let AE' : (ATm n) := h.right ▸ AE
-      let pairE : (ATm n) := ATm.pairSigma aE bE' AE'
+    let ⟨n'', BE⟩ ← elabATm cx B
+    if h : n = n' ∧ n + 1 = n'' then
+      let bE' : ATm n := h.left ▸ bE
+      let AE' : ATm (n+1) := h.right ▸ BE
+      let pairE : ATm n := ATm.pairSigma aE bE' AE'
       return ⟨n, pairE⟩
     else
       throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"

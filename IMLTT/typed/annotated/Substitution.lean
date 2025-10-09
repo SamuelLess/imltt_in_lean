@@ -40,11 +40,13 @@ def substitute' (σ : ASubst m n) (t : ATm n) : ATm m :=
   | .univ => .univ
   | .var i => substitute_var' σ i
   | .tt => .tt
-  | .indUnit A b a => .indUnit (substitute' (lift_subst_n' 1 σ) A) (substitute' σ b) (substitute' σ a)
+  | .indUnit A b a =>
+      .indUnit (substitute' (lift_subst_n' 1 σ) A) (substitute' σ b) (substitute' σ a)
   | .indEmpty A b => .indEmpty (substitute' (lift_subst_n' 1 σ) A) (substitute' σ b)
   | .lam A b => .lam (substitute' σ A) (substitute' (lift_subst_n' 1 σ) b)
   | .app f a => .app (substitute' σ f) (substitute' σ a)
-  | .pairSigma a b S => .pairSigma (substitute' σ a) (substitute' σ b) (substitute' σ S)
+  | .pairSigma a b B =>
+      .pairSigma (substitute' σ a) (substitute' σ b) (substitute' (lift_subst_n' 1 σ) B)
   | .indSigma A B C c p => .indSigma (substitute' σ A) (substitute' (lift_subst_n' 1 σ) B)
                             (substitute' (lift_subst_n' 1 σ) C) (substitute' (lift_subst_n' 2 σ) c)
                             (substitute' σ p)
@@ -99,3 +101,7 @@ notation:95 A "⌈ₐ" σ "⌉₀" => substitute_zero' σ A
 notation:95 a "/₀ₐ" => zero_substitution' a
 notation:95 a "/ₙₐ" le => n_substitution' le a
 notation:95 a "↑/ₙₐ" le => n_substitution_shift' le a
+
+theorem toTm_subst {n : Nat} (t : ATm (n+1)) (a : ATm n) :
+    (t⌈ₐa⌉₀).toTm = t.toTm⌈a.toTm⌉₀ := by
+  sorry

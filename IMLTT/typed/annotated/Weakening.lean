@@ -18,7 +18,7 @@ def weaken' (ρ : Weak m n) (t : ATm n) : ATm m :=
   | .indEmpty A b => .indEmpty (weaken' (lift_weak_n 1 ρ) A) (weaken' ρ b)
   | .lam A b => .lam (weaken' ρ A) (weaken' (lift_weak_n 1 ρ) b)
   | .app f a => .app (weaken' ρ f) (weaken' ρ a)
-  | .pairSigma a b S => .pairSigma (weaken' ρ a) (weaken' ρ b) (weaken' ρ S)
+  | .pairSigma a b S => .pairSigma (weaken' ρ a) (weaken' ρ b) (weaken' (lift_weak_n 1 ρ) S)
   | .indSigma A B C c p => .indSigma (weaken' ρ A) (weaken' (lift_weak_n 1 ρ) B)
                             (weaken' (lift_weak_n 1 ρ) C) (weaken' (lift_weak_n 2 ρ) c) (weaken' ρ p)
   | .zeroNat => .zeroNat

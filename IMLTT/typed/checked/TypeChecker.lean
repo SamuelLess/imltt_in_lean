@@ -11,7 +11,8 @@ import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
 def fuel := 200 -- proof go brrr 🚗
 
-def is_ctx : ((k : Nat) -> (Γsome : ACtx k) → (T : ATm k) → Except String (PLift (Γsome.toCtx ⊢ T.toTm type)))
+def is_ctx : ((k : Nat) → (Γsome : ACtx k) → (T : ATm k) →
+    Except String (PLift (Γsome.toCtx ⊢ T.toTm type)))
     -> (Γ : ACtx n) -> Except String (PLift (Γ.toCtx ctx))
   | _, .empty => pure <| .up IsCtx.empty
   | my_is_type, ACtx.extend _ Γ' T' => do
@@ -94,12 +95,14 @@ mutual
       let pi_intro := HasType.pi_intro has_type_t.down
       let is_eq_type_P ← is_eq_type f Γ (.pi A B') P
       return .up <| HasType.ty_conv pi_intro is_eq_type_P.down
-    /-| f+1, Γ, a&b, ΣA;B => do -- can't use infer_type here because of dependent types
-      let is_type_B ← is_type f _ (Γ ⬝ A) B
-      let has_type_a ← has_type f Γ a A
-      let has_type_b ← has_type f Γ b (B⌈a⌉₀)
-      return .up <| HasType.sigma_intro has_type_a.down has_type_b.down is_type_B.down
-    | f+1, Γ, Tm.refl A a, a' ≃[A'] a'' => do
+    | f+1, Γ, .pairSigma a b B, S => do
+      let ⟨A, ha⟩ ← infer_type f Γ a
+      let hb ← has_type f Γ b (B⌈ₐa⌉₀)
+      let hb_type ← is_type f _ (Γ ⬝a A) B
+      let sig_intro := HasType.sigma_intro ha ((toTm_subst _ _) ▸ hb.down) hb_type.down
+      let is_eq_type_S ← is_eq_type f Γ (.sigma A B) S
+      return .up <| HasType.ty_conv sig_intro is_eq_type_S.down
+    /-| f+1, Γ, Tm.refl A a, a' ≃[A'] a'' => do
       let is_type_A ← is_type f _ Γ A
       let has_type_a ← has_type f Γ a A
       have t : Γ ⊢ A.refl a ∶ a' ≃[A'] a'' := by
@@ -443,49 +446,46 @@ mutual
       return .up <| IsEqualTerm.term_symm is_eq_symm.down
   termination_by structural fuel
 
-  def infer_type (fuel : Nat) (Γ : ACtx n) (t : ATm n) : Except String (Σ' T : ATm n, Γ.toCtx ⊢ t.toTm ∶ T.toTm) :=
+  def infer_type (fuel : Nat) (Γ : ACtx n) (t : ATm n) :
+      Except String (Σ' T : ATm n, Γ.toCtx ⊢ t.toTm ∶ T.toTm) :=
     match fuel, Γ, t with
     | 0, _, _ => .error "infer_type: out of fuel"
     | f+1, Γ, .tt => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return ⟨.unit, HasType.unit_intro ctx_ok.down⟩
-    /-| f+1, Γ, 𝓏 => do
+    | f+1, Γ, .zeroNat => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      return .mk 𝒩 <| HasType.nat_zero_intro ctx_ok.down
-    | f+1, Γ, 𝓈(n) => do
-      let is_nat_n ← has_type f Γ n 𝒩
-      return .mk 𝒩 <| HasType.nat_succ_intro is_nat_n.down
-    | f+1, Γ, 𝟙 => do
+      return ⟨.nat, HasType.nat_zero_intro ctx_ok.down⟩
+    | f+1, Γ, .succNat n => do
+      let is_nat_n ← has_type f Γ n .nat
+      return ⟨.nat, HasType.nat_succ_intro is_nat_n.down⟩
+    | f+1, Γ, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      return .mk 𝒰 <| HasType.univ_unit ctx_ok.down
-    | f+1, Γ, 𝒩 => do
+      return ⟨.univ, HasType.univ_unit ctx_ok.down⟩
+    | f+1, Γ, .nat => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      return .mk 𝒰 <| HasType.univ_nat ctx_ok.down
-    | f+1, Γ ⬝ T, v(0) => do
+      return ⟨.univ, HasType.univ_nat ctx_ok.down⟩
+    | f+1, ACtx.extend _ Γ T, .var 0 => do
       let is_type_T ← is_type f _ Γ T
-      return .mk (T⌊↑ₚidₚ⌋) <| HasType.var is_type_T.down
-    | f+1, Γ ⬝ T, v(⟨(i+1), hi⟩) => do
-      let ⟨T', h⟩ ← infer_type f Γ v(.mk i (Nat.succ_lt_succ_iff.mp hi))
+      return ⟨(T⌊ₐ↑ₚidₚ⌋),
+          ((toTm_weak _ _) ▸ (toCtx_extend _ _ _) ▸ HasType.var is_type_T.down)⟩
+    | f+1, ACtx.extend _ Γ T, .var ⟨(i+1), hi⟩ => do
+      let ⟨T', h⟩ ← infer_type f Γ <| .var ⟨i, Nat.succ_lt_succ_iff.mp hi⟩
       let is_type_T ← is_type f _ Γ T
-      return .mk (T'⌊↑ₚidₚ⌋) <| HasType.weak h is_type_T.down
-    | f+1, Γ, λA;b => do
-      let ⟨B, h⟩ ← infer_type f (Γ ⬝ A) b
-      return .mk (Tm.pi A B) <| HasType.pi_intro h
-    | f+1, Γ, a&b => do
-      -- FIXME: this does not work for proper dependent pairs
+      return ⟨(T'⌊ₐ↑ₚidₚ⌋), (toTm_weak _ _) ▸ (toCtx_extend _ _ _) ▸ HasType.weak h is_type_T.down⟩
+    | f+1, Γ, .lam A b => do
+      let ⟨B, h⟩ ← infer_type f (Γ ⬝a A) b
+      return ⟨.pi A B, HasType.pi_intro h⟩
+    | f+1, Γ, .pairSigma a b B => do
       let ⟨A, ha⟩ ← infer_type f Γ a
-      let ⟨Bsubsta, hb⟩ ← infer_type f Γ b
-      let B := Bsubsta⌊↑ₚidₚ⌋
-      let is_equal_type_B_B' ← is_eq_type f Γ Bsubsta (B⌈a⌉₀)
-      let is_type_B ← is_type f _ (Γ ⬝ A) B
-      have := HasType.ty_conv hb is_equal_type_B_B'.down
-      return .mk (ΣA;B) <| HasType.sigma_intro ha this is_type_B.down
-    --| f+1, Γ, a◃b => do
-    | f+1, Γ, g ◃ a => do
-      let ⟨ΠA;B, hg⟩ ← infer_type f Γ g
-        | .error s!"infer_type: expected a lambda term at {g}"
+      let hb ← has_type f Γ b (B⌈ₐa⌉₀)
+      let is_type_B ← is_type f _ (Γ ⬝a A) B
+      return ⟨.sigma A B, HasType.sigma_intro ha ((toTm_subst _ _) ▸ hb.down) is_type_B.down⟩
+    | f+1, Γ, .app g a => do
+      let ⟨.pi A B, hg⟩ ← infer_type f Γ g
+        | .error s!"infer_type: expected a lambda term at {g.toTm}"
       let has_type_a ← has_type f Γ a A
-      return .mk (B⌈a⌉₀) <| HasType.pi_elim hg has_type_a.down-/
+      return ⟨B⌈ₐa⌉₀, (toTm_subst _ _) ▸ HasType.pi_elim hg has_type_a.down⟩
     | f+1, _, t => .error s!"infer_type: unsupported pattern {t.toTm}"
   termination_by structural fuel
 end
