@@ -1,7 +1,11 @@
 import IMLTT.untyped.AbstractSyntax
-import IMLTT.typed.AnnotatedSyntax
+import IMLTT.typed.annotated.Syntax
+import IMLTT.typed.annotated.Elaboration
 import IMLTT.typed.checked.TypeChecker
+
 import Qq
+
+open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
 structure TTm (n : Nat) where
   Γ : Ctx n
@@ -9,18 +13,19 @@ structure TTm (n : Nat) where
   T : Tm n
   hasType : Γ ⊢ t ∶ T
 
-partial def elabTTm (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) : TermElabM Q((n : Nat) × TTm n) := do
+partial def elabTTm (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) :
+    TermElabM Q((n : Nat) × TTm n) := do
   let ⟨cx, ⟨n, actx⟩⟩ ← elabACtx [] stxcx
   let ⟨nt, atm⟩ ← elabATm cx stxt
   let ⟨nT, aTm⟩ ← elabATm cx stxT
   if h : n = nt ∧ n = nT then
-    let t : Tm n := h.left ▸ atm.toTm
-    let T : Tm n := h.right ▸ aTm.toTm
-    match has_type 30 actx.toCtx t T with
+    let t : ATm n := h.left ▸ atm
+    let T : ATm n := h.right ▸ aTm
+    match has_type 30 actx t T with
     | Except.ok _ =>
-      let ctxE : Q(Ctx $n) := Lean.toExpr (actx.toCtx)
-      let tE : Q(Tm $n) := Lean.toExpr t
-      let TE : Q(Tm $n) := Lean.toExpr T
+      let ctxE : Q(ACtx $n) := Lean.toExpr actx
+      let tE : Q(ATm $n) := Lean.toExpr t
+      let TE : Q(ATm $n) := Lean.toExpr T
       match ← whnf q(has_type 30 $ctxE $tE $TE) with
       | mkApp _ pr =>
         let ttm := mkApp5 (mkConst ``TTm.mk) (mkNatLit n) ctxE tE TE (← mkAppM ``PLift.down #[pr])
