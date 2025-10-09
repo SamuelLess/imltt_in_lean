@@ -81,6 +81,12 @@ def ATm.shift {n} (k : Nat) : ATm n → ATm (n + k)
   | .refl A a => .refl (A.shift k) (a.shift k)
   | .j A P a b p r => .j (A.shift k) (h'' ▸ P.shift k) (h ▸ a.shift k) (b.shift k) (p.shift k) (r.shift k)
 
+
+def ATm.toString {n}  (atm : ATm n) : String := (atm.toTm).toString
+
+instance {n} : ToString (ATm n) where
+  toString := ATm.toString
+
 -- syntax for inductive Annotated Term type
 declare_syntax_cat atm (behavior := both)
 
@@ -101,6 +107,7 @@ syntax "ind1" "(" ident atm atm atm ")" : atm
 syntax "λ " "(" ident " : " atm  ")" "." atm : atm
 syntax atm "◃" atm : atm
 syntax "(" atm "&" atm ")" "::" atm : atm
+syntax "(" atm "&" atm ")" "::" ident "→" atm : atm
 syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
 syntax "𝓏" : atm
 syntax "𝓈(" atm ")" : atm
@@ -128,6 +135,13 @@ def ACtx.toCtx {n} : ACtx n → Ctx n
 def ACtx.toNameList : ACtx n → List Name
   | .empty => []
   | .extend name Γ _ => name :: Γ.toNameList
+
+def ACtx.toString {n} : ACtx n → String
+  | .empty => "ε"
+  | .extend name Γ T => s!"{Γ.toString} ⬝ ({name} : {T.toTm})"
+
+instance : ToString (ACtx n) where
+  toString := ACtx.toString
 
 declare_syntax_cat actx (behavior := both)
 
