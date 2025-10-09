@@ -66,7 +66,6 @@ mutual
     | f+1, Γ ⬝a T, .var ⟨0,_⟩, T' =>  do
       let is_type_T ← is_type f _ Γ T
       let is_eq_type_T_T' ← is_eq_type f (Γ ⬝a T) (T⌊ₐ↑ₚidₚ⌋) T'
-      --have has_type_T : (Γ ⬝a T) ⊢ v(0) ∶ (T⌊ₐ↑ₚidₚ⌋) := HasType.var is_type_T.down
       have has_type_T := HasType.var is_type_T.down
       return .up <| HasType.ty_conv has_type_T ((toTm_weak _ _) ▸ is_eq_type_T_T'.down)
     | f+1, Γ ⬝a T, .var ⟨i+1, hi⟩, T' => do
@@ -76,26 +75,26 @@ mutual
       let weak := HasType.weak h is_type_T.down
       return .up <| HasType.ty_conv weak ((toTm_weak _ _) ▸ is_eq_type_T.down)
     -- intro rules
-    /-| f+1, Γ, ⋆, Unit => do
+    | f+1, Γ, .tt, Unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type ← is_eq_type f Γ 𝟙 Unit
+      let is_eq_type ← is_eq_type f Γ .unit Unit
       return .up <| HasType.ty_conv (HasType.unit_intro ctx_ok.down) is_eq_type.down
-    | f+1, Γ, 𝓏, N => do
+    | f+1, Γ, .zeroNat, N => do
       let ctx_ok ← is_ctx (is_type f) Γ
-      let is_eq_type ← is_eq_type f Γ 𝒩 N
+      let is_eq_type ← is_eq_type f Γ .nat N
       return .up <| HasType.ty_conv (HasType.nat_zero_intro ctx_ok.down) is_eq_type.down
-    | f+1, Γ, 𝓈(n), N => do
-      let has_type_n ← has_type f Γ n 𝒩
-      let is_eq_type_N ← is_eq_type f Γ 𝒩 N
+    | f+1, Γ, .succNat n, N => do
+      let has_type_n ← has_type f Γ n .nat
+      let is_eq_type_N ← is_eq_type f Γ .nat N
       return .up <| HasType.ty_conv (HasType.nat_succ_intro has_type_n.down) is_eq_type_N.down
-    | f+1, Γ, λA;t, P => do
-      let ⟨ΠA';B', hp⟩ ← infer_type f Γ (λA;t)
-        | .error s!"has_type: expected Π-type at {λA;t}, instead got {P}"
-      let has_type_t ← has_type f (Γ ⬝ A) t B' -- v(0) is now bound by A
+    | f+1, Γ, .lam A t, P => do
+      let ⟨.pi A' B', hp⟩ ← infer_type f Γ (.lam A t)
+        | .error s!"has_type: expected Π-type at {λA.toTm;t.toTm}, instead got {P.toTm}"
+      let has_type_t ← has_type f (Γ ⬝a A) t B' -- v(0) is now bound by A
       let pi_intro := HasType.pi_intro has_type_t.down
-      let is_eq_type_P ← is_eq_type f Γ (ΠA;B') P
+      let is_eq_type_P ← is_eq_type f Γ (.pi A B') P
       return .up <| HasType.ty_conv pi_intro is_eq_type_P.down
-    | f+1, Γ, a&b, ΣA;B => do -- can't use infer_type here because of dependent types
+    /-| f+1, Γ, a&b, ΣA;B => do -- can't use infer_type here because of dependent types
       let is_type_B ← is_type f _ (Γ ⬝ A) B
       let has_type_a ← has_type f Γ a A
       let has_type_b ← has_type f Γ b (B⌈a⌉₀)
