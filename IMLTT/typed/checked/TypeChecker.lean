@@ -319,7 +319,7 @@ mutual
       have pi_comp := IsEqualTerm.pi_comp has_type_b.down has_type_x.down
       have := IsEqualTerm.term_trans pi_comp <|
         (toTm_subst _ _) ▸ (toTm_subst _ _) ▸ is_eq_term_b.down
-      return .up <| IsEqualTerm.ty_conv_eq this <| (toTm_subst _ _) ▸ is_eq_type_B_T.down-/
+      return .up <| IsEqualTerm.ty_conv_eq this <| (toTm_subst _ _) ▸ is_eq_type_B_T.down
     | f+1, Γ, .indSigma A B C c (.pairSigma a b S), t, T => do
       let has_type_a ← has_type f Γ a A
       let has_type_b ← has_type f Γ b (B⌈ₐa⌉₀)
@@ -342,28 +342,50 @@ mutual
         rewrite [toTm_subst] at h
         exact h
       return .up <| IsEqualTerm.ty_conv_eq this <|
-        (toTm_subst _ (a.pairSigma b B)) ▸ is_eq_type_C_T.down
-    /-| f+1, Γ, .indNat A z s 𝓏, t, T => do
-      let is_type_A ← is_type f _ (Γ ⬝ 𝒩) A
-      let has_type_z ← has_type f Γ z (A⌈𝓏⌉₀)
-      let has_type_s ← has_type f (Γ ⬝ 𝒩 ⬝ A) s (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)
-      let has_type_zero ← has_type f Γ 𝓏 𝒩
-      have nat_zero_comp := IsEqualTerm.nat_zero_comp is_type_A.down has_type_z.down has_type_s.down has_type_zero.down
-      let is_eq_term_z ← is_eq_term f Γ z t (A⌈𝓏⌉₀)
-      let is_eq_type_A_T ← is_eq_type f Γ (A⌈𝓏⌉₀) T
-      have := IsEqualTerm.term_trans nat_zero_comp is_eq_term_z.down
-      return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
-    | f+1, Γ, .indNat A z s 𝓈(n), t, T => do
-      let is_type_A ← is_type f _ (Γ ⬝ 𝒩) A
-      let has_type_z ← has_type f Γ z (A⌈𝓏⌉₀)
-      let has_type_s ← has_type f (Γ ⬝ 𝒩 ⬝ A) s (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)
-      let has_type_n ← has_type f Γ n 𝒩
-      have nat_succ_comp := IsEqualTerm.nat_succ_comp is_type_A.down has_type_z.down has_type_s.down has_type_n.down
-      let is_eq_term_s ← is_eq_term f Γ (s⌈(ₛidₚ)⋄ n⋄ (.indNat A z s n)⌉) t (A⌈𝓈(n)⌉₀)
-      let is_eq_type_A_T ← is_eq_type f Γ (A⌈𝓈(n)⌉₀) T
-      have := IsEqualTerm.term_trans nat_succ_comp is_eq_term_s.down
-      return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
-    -- TODO: add J computation rule here-/
+        (toTm_subst _ (a.pairSigma b B)) ▸ is_eq_type_C_T.down-/
+    /-| f+1, Γ, .indNat A z s .zeroNat, t, T => do
+      let is_type_A ← is_type f _ (Γ ⬝a .nat) A
+      let has_type_z ← has_type f Γ z (A⌈ₐ.zeroNat⌉₀)
+      let has_type_s ← has_type f ((Γ ⬝a .nat) ⬝a A) s (A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (.succNat (.var 0))⌉⌊ₐ↑ₚidₚ⌋)
+      let has_type_zero ← has_type f Γ .zeroNat .nat
+      have nat_zero_comp := IsEqualTerm.nat_zero_comp is_type_A.down
+        ((toTm_subst _ .zeroNat) ▸ has_type_z.down)
+        (by
+          let h := has_type_s.down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toTm_weak] at h
+          rewrite [toTm_asubst] at h
+          exact h)
+        has_type_zero.down
+      let is_eq_term_z ← is_eq_term f Γ z t (A⌈ₐ.zeroNat⌉₀)
+      let is_eq_type_A_T ← is_eq_type f Γ (A⌈ₐ.zeroNat⌉₀) T
+      have := IsEqualTerm.term_trans nat_zero_comp <| (toTm_subst _ .zeroNat) ▸ is_eq_term_z.down
+      return .up <| IsEqualTerm.ty_conv_eq this <| (toTm_subst _ .zeroNat) ▸ is_eq_type_A_T.down
+    | f+1, Γ, .indNat A z s (.succNat n), t, T => do
+      let is_type_A ← is_type f _ (Γ ⬝a .nat) A
+      let has_type_z ← has_type f Γ z (A⌈ₐ.zeroNat⌉₀)
+      let has_type_s ← has_type f ((Γ ⬝a .nat) ⬝a A) s (A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (.succNat (.var 0))⌉⌊ₐ↑ₚidₚ⌋)
+      let has_type_n ← has_type f Γ n .nat
+      have nat_succ_comp := IsEqualTerm.nat_succ_comp is_type_A.down
+        ((toTm_subst _ .zeroNat) ▸ has_type_z.down)
+        (by
+          let h := has_type_s.down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toTm_weak] at h
+          rewrite [toTm_asubst] at h
+          exact h)
+        has_type_n.down
+      let is_eq_term_s ← is_eq_term f Γ (s⌈ₐ(ₐₛidₚ)⋄ₐ n⋄ₐ (.indNat A z s n)⌉) t (A⌈ₐ(.succNat n)⌉₀)
+      let is_eq_type_A_T ← is_eq_type f Γ (A⌈ₐ(.succNat n)⌉₀) T
+      have := IsEqualTerm.term_trans nat_succ_comp <| by
+        let h := is_eq_term_s.down
+        rewrite [toTm_asubst] at h
+        rewrite [toTm_subst] at h
+        exact h
+      return .up <| IsEqualTerm.ty_conv_eq this ((toTm_subst _ (.succNat n)) ▸ is_eq_type_A_T.down)-/
+    -- TODO: add J computation rule here
     -- congruence rules
     /-| f+1, Γ,.tt, .tt, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
@@ -449,17 +471,33 @@ mutual
           · exact (← is_eq_type f Γ A A').down
           · exact (← is_eq_term f Γ a a' A).down
         · exact (← is_eq_type f Γ (.iden A a a) T).down
-    /-| f+1, Γ, .j A B b a₁ a₃ p, .j A' B' b' a₂ a₄ p', T => do
+    | f+1, Γ, .j A B b a₁ a₃ p, .j A' B' b' a₂ a₄ p', T => do
       return .up <| by
-        apply IsEqualTerm.ty_conv_eq (A:=B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) (B:=T)
+        apply IsEqualTerm.ty_conv_eq (A:=B.toTm⌈(ₛidₚ)⋄ a₁.toTm ⋄ a₃.toTm ⋄ p.toTm⌉) (B:=T.toTm)
         · apply IsEqualTerm.iden_elim_eq
-          · exact (← is_eq_type f (Γ ⬝ A ⬝ A⌊↑ₚidₚ⌋ ⬝ v(1) ≃[A⌊↑ₚ↑ₚidₚ⌋] v(0)) B B').down
-          · exact (← is_eq_term f (Γ ⬝ A) b b' (B⌈(ₛidₚ)⋄ v(0)⋄ .refl (A⌊↑ₚidₚ⌋) v(0)⌉)).down
+          · let h := (← is_eq_type f
+              (((Γ ⬝a A) ⬝a (A⌊ₐ↑ₚidₚ⌋)) ⬝a ((A⌊ₐ↑ₚ↑ₚidₚ⌋).iden (.var 1) (.var 0))) B B').down
+            rewrite [toCtx_extend] at h
+            rewrite [toCtx_extend] at h
+            rewrite [toCtx_extend] at h
+            rewrite [toTm_weak] at h
+            simp [ATm.toTm] at h
+            rewrite [toTm_weak] at h
+            exact h
+          · let h := (← is_eq_term f (Γ ⬝a A) b b'
+              (B⌈ₐ(ₐₛidₚ)⋄ₐ .var 0 ⋄ₐ .refl (A⌊ₐ↑ₚidₚ⌋) (.var 0)⌉)).down
+            rewrite [toCtx_extend] at h
+            rewrite [toTm_asubst] at h
+            simp [ASubst.toSubst, ATm.toTm] at h
+            rewrite [toTm_weak] at h
+            exact h
           · exact (← is_eq_type f Γ A A').down
           · exact (← is_eq_term f Γ a₁ a₂ A).down
           · exact (← is_eq_term f Γ a₃ a₄ A').down
-          · exact (← is_eq_term f Γ p p' (a₁ ≃[A] a₃)).down
-        · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down-/
+          · exact (← is_eq_term f Γ p p' (A.iden a₁ a₃)).down
+        · let h := (← is_eq_type f Γ (B⌈ₐ(ₐₛidₚ)⋄ₐ a₁⋄ₐ a₃⋄ₐ p⌉) T).down
+          rewrite [toTm_asubst] at h
+          exact h
     -- univ rules
     /-| f+1, Γ, .unit, .unit, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ .univ Univ
