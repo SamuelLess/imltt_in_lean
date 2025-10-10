@@ -81,6 +81,12 @@ def ATm.shift {n} (k : Nat) : ATm n → ATm (n + k)
   | .refl A a => .refl (A.shift k) (a.shift k)
   | .j A P a b p r => .j (A.shift k) (h'' ▸ P.shift k) (h ▸ a.shift k) (b.shift k) (p.shift k) (r.shift k)
 
+
+def ATm.toString {n}  (atm : ATm n) : String := (atm.toTm).toString
+
+instance {n} : ToString (ATm n) where
+  toString := ATm.toString
+
 -- syntax for inductive Annotated Term type
 declare_syntax_cat atm (behavior := both)
 
