@@ -24,3 +24,17 @@ def natpair : ATm 0 := [atm|((λ (n:𝒩).
     (𝓈(n) & (ret_id ◃ 𝒩) ◃ 𝓏) :: 𝒩) ◃ 𝓏)]
 
 ttheorem usingnextterm : ε  ⊢ natpair : Σ(x : 𝒩;𝒩)
+
+def type_id := [atm| Π(T : 𝒰;Π (x : T;T))]
+
+ttheorem emptyctx : ε ctx
+
+theorem bridge : IsCtx Ctx.empty := emptyctx
+
+ttheorem id_is_type : ε ⊢ type_id type
+
+ttheorem typeid1 : ε ⊢ ret_id : type_id
+
+ttheorem typeid2 : ε ⊢ type_id ≡ Π(T : 𝒰;Π (x : T;T)) type
+
+ttheorem typeid3 : ε ⊢ ret_id ≡ ret_id : type_id
