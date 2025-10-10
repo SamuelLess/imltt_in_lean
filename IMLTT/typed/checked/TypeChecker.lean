@@ -271,12 +271,12 @@ mutual
     | 0, Γ, a, a', A =>
       .error s!"is_eq_term: out of fuel with {Γ} ⊢ {a.toTm} ≡ {a'.toTm} : {A.toTm}"
     -- variables
-    | f+1, Γ ⬝a T, .var 0, .var 0, T' => do
+    | f+1, ACtx.extend _ Γ T, .var 0, .var 0, T' => do
       let is_type_T ← is_type f _ Γ T
       let is_eq_T_T' ← is_eq_type f (Γ ⬝a T) (T⌊ₐ↑ₚidₚ⌋) T'
       have := IsEqualTerm.var_eq is_type_T.down
       return .up <| IsEqualTerm.ty_conv_eq this ((toTm_weak _ _) ▸ is_eq_T_T'.down)
-    | f+1, Γ ⬝a T, .var ⟨i+1,hi⟩, .var ⟨j+1,hj⟩, T' => do
+    | f+1, ACtx.extend _ Γ T, .var ⟨i+1,hi⟩, .var ⟨j+1,hj⟩, T' => do
       if hieqj : i == j then
         let ⟨Tvi, htvi⟩ ← infer_type f Γ (.var (⟨i, (Nat.succ_lt_succ_iff.mp hi)⟩))
         have t : (Γ ⬝a T).toCtx ⊢ v(⟨i+1, hi⟩) ≡ v(⟨j+1, hj⟩) ∶ T'.toTm := by
@@ -347,7 +347,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
     -- TODO: add J computation rule here-/
     -- congruence rules
-    /-| f+1, Γ,.tt, .tt, .unit => do -- ALREADY WORKS!!!
+    | f+1, Γ,.tt, .tt, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
     | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
@@ -419,7 +419,7 @@ mutual
         · apply IsEqualTerm.iden_intro_eq
           · exact (← is_eq_type f Γ A A').down
           · exact (← is_eq_term f Γ a a' A).down
-        · exact (← is_eq_type f Γ (.iden A a a) T).down-/ -- UP UNTIL HERE
+        · exact (← is_eq_type f Γ (.iden A a a) T).down
     /-| f+1, Γ, .j A B b a₁ a₃ p, .j A' B' b' a₂ a₄ p', T => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) (B:=T)
