@@ -102,6 +102,26 @@ notation:95 a "/₀ₐ" => zero_substitution' a
 notation:95 a "/ₙₐ" le => n_substitution' le a
 notation:95 a "↑/ₙₐ" le => n_substitution_shift' le a
 
-theorem toTm_subst {n : Nat} (t : ATm (n+1)) (a : ATm n) :
-    (t⌈ₐa⌉₀).toTm = t.toTm⌈a.toTm⌉₀ := by
+def ASubst.toSubst {m n : Nat} (σ : ASubst m n) : Subst m n :=
+  match σ with
+  | .weak ρ => .weak ρ
+  | .shift σ' => .shift σ'.toSubst
+  | .lift σ' => .lift σ'.toSubst
+  | .extend σ' t => .extend σ'.toSubst t.toTm
+
+theorem toTm_asubst {n : Nat} (t : ATm n) (σ : ASubst m n) :
+    (t⌈ₐσ⌉).toTm = t.toTm⌈σ.toSubst⌉ := by
   sorry
+
+theorem toTm_subst {n : Nat} (t : ATm (n+1)) (a : ATm n) :
+    (t⌈ₐa⌉₀).toTm = t.toTm⌈a.toTm⌉₀ := by apply toTm_asubst
+
+/-
+Γ.toCtx ⬝ A.toTm ⬝ B.toTm ⊢ c.toTm ∶ C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ (ATm.var 1).pairSigma (ATm.var 0) (B⌊ₐ↑ₚ↑ₚidₚ⌋)⌉.toTm
+⊢ Γ.toCtx ⬝ A.toTm ⬝ B.toTm ⊢ c.toTm ∶ C.toTm⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉
+-/
+
+/-
+h : Γ.toCtx ⬝ ATm.nat.toTm ⬝ A.toTm ⊢ s.toTm ∶ A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (ATm.var 0).succNat⌉⌊ₐ↑ₚidₚ⌋.toTm
+⊢ Γ.toCtx ⬝ 𝒩 ⬝ A.toTm ⊢ s.toTm ∶ A.toTm⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋
+-/

@@ -181,7 +181,8 @@ mutual
         · let h := (← has_type f ((Γ ⬝a A) ⬝a B) c (C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ (.pairSigma (.var 1) (.var 0) (B⌊ₐ↑ₚ↑ₚidₚ⌋))⌉)).down
           rewrite [toCtx_extend] at h
           rewrite [toCtx_extend] at h
-          sorry -- FIXME: this will be fixed with the more general statement of toTm_subst
+          rewrite [toTm_asubst] at h
+          exact h
         · exact (← has_type f Γ p (.sigma A B)).down
         · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (C⌈ₐp⌉₀) C').down
     | f+1, Γ, .indNat A z s n, A' => do
@@ -195,7 +196,9 @@ mutual
         · let h := (← has_type f ((Γ ⬝a .nat) ⬝a A) s (A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (.succNat <| .var 0)⌉⌊ₐ↑ₚidₚ⌋)).down
           rewrite [toCtx_extend] at h
           rewrite [toCtx_extend] at h
-          sorry -- FIXME: this will be fixed with the more general statement of toTm_subst
+          rewrite [toTm_weak] at h
+          rewrite [toTm_asubst] at h
+          exact h
         · exact (← has_type f Γ n .nat).down
         · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (A⌈ₐn⌉₀) A').down
     | f+1, Γ, .j A B b a a' p, B' => do
@@ -212,12 +215,17 @@ mutual
           exact h
         · let h := (← has_type f (Γ ⬝a A) b (B⌈ₐ(ₐₛidₚ)⋄ₐ (.var 0)⋄ₐ .refl (A⌊ₐ↑ₚidₚ⌋) (.var 0)⌉)).down
           rewrite [toCtx_extend] at h
-          sorry -- FIXME: this might be fixed with the more general statement of toTm_subst
+          --rewrite [toTm_weak] at h
+          rewrite [toTm_asubst] at h
+          simp [ASubst.toSubst, ATm.toTm] at h
+          rewrite [toTm_weak] at h
+          exact h
         · exact (← has_type f Γ a A).down
         · exact (← has_type f Γ a' A).down
         · exact (← has_type f Γ p (.iden A a a')).down
         · let h := (← is_eq_type f Γ (B⌈ₐ(ₐₛidₚ)⋄ₐ a⋄ₐ a'⋄ₐ p⌉) B').down
-          sorry -- FIXME: this will be fixed with the more general statement of toTm_subst
+          rewrite [toTm_asubst] at h
+          exact h
     | _, _, t, T => .error s!"has_type: unsupported pattern {t.toTm} ∶ {T.toTm}"
   termination_by structural fuel
 
@@ -271,7 +279,7 @@ mutual
     | 0, Γ, a, a', A =>
       .error s!"is_eq_term: out of fuel with {Γ} ⊢ {a.toTm} ≡ {a'.toTm} : {A.toTm}"
     -- variables
-    | f+1, ACtx.extend _ Γ T, .var 0, .var 0, T' => do
+    /-| f+1, ACtx.extend _ Γ T, .var 0, .var 0, T' => do
       let is_type_T ← is_type f _ Γ T
       let is_eq_T_T' ← is_eq_type f (Γ ⬝a T) (T⌊ₐ↑ₚidₚ⌋) T'
       have := IsEqualTerm.var_eq is_type_T.down
@@ -311,20 +319,30 @@ mutual
       have pi_comp := IsEqualTerm.pi_comp has_type_b.down has_type_x.down
       have := IsEqualTerm.term_trans pi_comp <|
         (toTm_subst _ _) ▸ (toTm_subst _ _) ▸ is_eq_term_b.down
-      return .up <| IsEqualTerm.ty_conv_eq this <| (toTm_subst _ _) ▸ is_eq_type_B_T.down
+      return .up <| IsEqualTerm.ty_conv_eq this <| (toTm_subst _ _) ▸ is_eq_type_B_T.down-/
     | f+1, Γ, .indSigma A B C c (.pairSigma a b S), t, T => do
       let has_type_a ← has_type f Γ a A
       let has_type_b ← has_type f Γ b (B⌈ₐa⌉₀)
       let is_type_C ← is_type f _ (Γ ⬝a (.sigma A B)) C
       let has_type_c ← has_type f ((Γ ⬝a A) ⬝a B) c (C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ .pairSigma (.var 1) (.var 0) (B⌊ₐ↑ₚ↑ₚidₚ⌋)⌉)
       have sigma_comp := IsEqualTerm.sigma_comp is_type_C.down
-        sorry --has_type_c.down -- FIXME: this will be fixed with the more general statement of toTm_subst
+        (by
+          let h := has_type_c.down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toTm_asubst] at h
+          exact h)
         has_type_a.down
-        sorry --has_type_b.down -- FIXME: what?
+        ((toTm_subst _ _ ) ▸ has_type_b.down)
       let is_eq_term_c ← is_eq_term f Γ (c⌈ₐ(ₐₛidₚ)⋄ₐ a⋄ₐ b⌉) t (C⌈ₐ.pairSigma a b B⌉₀)
       let is_eq_type_C_T ← is_eq_type f Γ (C⌈ₐ.pairSigma a b B⌉₀) T
-      have := IsEqualTerm.term_trans sigma_comp sorry -- is_eq_term_c.down -- FIXME:
-      return .up <| IsEqualTerm.ty_conv_eq this sorry -- is_eq_type_C_T.down -- FIXME:
+      have := IsEqualTerm.term_trans sigma_comp <| by
+        let h := is_eq_term_c.down
+        rewrite [toTm_asubst] at h
+        rewrite [toTm_subst] at h
+        exact h
+      return .up <| IsEqualTerm.ty_conv_eq this <|
+        (toTm_subst _ (a.pairSigma b B)) ▸ is_eq_type_C_T.down
     /-| f+1, Γ, .indNat A z s 𝓏, t, T => do
       let is_type_A ← is_type f _ (Γ ⬝ 𝒩) A
       let has_type_z ← has_type f Γ z (A⌈𝓏⌉₀)
@@ -347,7 +365,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
     -- TODO: add J computation rule here-/
     -- congruence rules
-    | f+1, Γ,.tt, .tt, .unit => do
+    /-| f+1, Γ,.tt, .tt, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
     | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
@@ -386,14 +404,19 @@ mutual
         apply IsEqualTerm.sigma_intro_eq
         · exact (← is_eq_term f Γ a a' A).down
         · exact (toTm_subst _ _) ▸ (← is_eq_term f Γ b b' (B⌈ₐa⌉₀)).down
-        · exact (← is_type f _ (Γ ⬝a A) B).down
+        · exact (← is_type f _ (Γ ⬝a A) B).down-/
     | f+1, Γ, .indSigma A B C c p, .indSigma A' B' C' c' p', T => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=C.toTm⌈p.toTm⌉₀) (B:=T.toTm)
         · apply IsEqualTerm.sigma_elim_eq
           · exact (← is_eq_type f (Γ ⬝a .sigma A B) C C').down
-          · sorry -- exact (← is_eq_term f ((Γ ⬝a A) ⬝a B) c c'
-              -- (C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ .pairSigma (.var 0) (.var 1) (B⌊ₐ↑ₚ↑ₚidₚ⌋)⌉)).down -- FIXME:
+          · let h := (← is_eq_term f ((Γ ⬝a A) ⬝a B) c c'
+              (C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ .pairSigma (.var 1) (.var 0) (B⌊ₐ↑ₚ↑ₚidₚ⌋)⌉)).down
+            rewrite [toCtx_extend] at h
+            rewrite [toCtx_extend] at h
+            rewrite [toTm_asubst] at h
+            simp [ASubst.toSubst, ATm.toTm] at h
+            exact h
           · exact (← is_eq_type f Γ A A').down
           · exact (← is_eq_type f (Γ ⬝a A) B B').down
           · exact (← is_eq_term f Γ p p' (.sigma A B)).down
@@ -410,7 +433,13 @@ mutual
         · apply IsEqualTerm.nat_elim_eq
           · exact (← is_eq_type f (Γ ⬝a .nat) A A').down
           · exact (toTm_subst _ .zeroNat) ▸ (← is_eq_term f Γ z z' (A⌈ₐ.zeroNat⌉₀)).down
-          · sorry -- exact (← is_eq_term f ((Γ ⬝a .nat) ⬝a A) s s' (A⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋)).down -- FIXME
+          · let h := (← is_eq_term f ((Γ ⬝a .nat) ⬝a A) s s'
+              (A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ .succNat (.var 0)⌉⌊ₐ↑ₚidₚ⌋)).down
+            rewrite [toCtx_extend] at h
+            rewrite [toCtx_extend] at h
+            rewrite [toTm_weak] at h
+            rewrite [toTm_asubst] at h
+            simp_all [ASubst.toSubst, ATm.toTm]
           · exact (← is_eq_term f Γ n n' .nat).down
         · exact (toTm_subst _ _) ▸ (← is_eq_type f Γ (A⌈ₐn⌉₀) T).down
     | f+1, Γ, .refl A a, .refl A' a', T => do
@@ -432,7 +461,7 @@ mutual
           · exact (← is_eq_term f Γ p p' (a₁ ≃[A] a₃)).down
         · exact (← is_eq_type f Γ (B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) T).down-/
     -- univ rules
-    | f+1, Γ, .unit, .unit, Univ => do
+    /-| f+1, Γ, .unit, .unit, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ .univ Univ
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.ty_conv_eq
@@ -467,7 +496,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq
         (IsEqualTerm.univ_iden_eq
           is_eq_term_A_A'.down is_eq_term_a₁_a₃.down is_eq_term_a₂_a₄.down) is_eq_type_U_Univ.down
-    -- conversion
+    -- conversion-/
     | f+1, Γ, a, a', A => do
       let is_eq_symm ← is_eq_term f Γ a' a A
       return .up <| IsEqualTerm.term_symm is_eq_symm.down
