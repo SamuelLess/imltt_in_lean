@@ -287,6 +287,7 @@ mutual
           · exact defeq_refl_term htvi
           · exact (← is_type f _ Γ T).down
           · exact (toTm_weak _ _) ▸ (← is_eq_type f (Γ ⬝a T) (Tvi⌊ₐ↑ₚidₚ⌋) T').down
+          · exact Nat.succ_lt_succ_iff.mp hi
         return .up t
       else
         .error s!"is_eq_term: two different variables cannot defeq v({i}) ≡ v({j}) ∶ {T'.toTm}"
