@@ -22,7 +22,7 @@ def is_ctx : ((k : Nat) → (Γsome : ACtx k) → (T : ATm k) →
 
 notation Γ "⬝a" A => ACtx.extend Lean.Name.anonymous Γ A
 
-set_option maxHeartbeats 500000
+set_option maxHeartbeats 800000
 mutual
   def is_type  (fuel : Nat)  (n : Nat)
        (Γ : ACtx n) (T : ATm n) : Except String (PLift (Γ.toCtx ⊢ T.toTm type)) :=
@@ -346,7 +346,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq this is_eq_type_A_T.down
     -- TODO: add J computation rule here-/
     -- congruence rules
-    | f+1, Γ,.tt, .tt, .unit => do
+    /-| f+1, Γ,.tt, .tt, .unit => do -- ALREADY WORKS!!!
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
     | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
@@ -418,7 +418,7 @@ mutual
         · apply IsEqualTerm.iden_intro_eq
           · exact (← is_eq_type f Γ A A').down
           · exact (← is_eq_term f Γ a a' A).down
-        · exact (← is_eq_type f Γ (.iden A a a) T).down
+        · exact (← is_eq_type f Γ (.iden A a a) T).down-/ -- UP UNTIL HERE
     /-| f+1, Γ, .j A B b a₁ a₃ p, .j A' B' b' a₂ a₄ p', T => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=B⌈(ₛidₚ)⋄ a₁⋄ a₃⋄ p⌉) (B:=T)
