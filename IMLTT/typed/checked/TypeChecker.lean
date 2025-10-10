@@ -13,7 +13,7 @@ def fuel := 200 -- proof go brrr 🚗
 
 def is_ctx : ((k : Nat) → (Γsome : ACtx k) → (T : ATm k) →
     Except String (PLift (Γsome.toCtx ⊢ T.toTm type)))
-    -> (Γ : ACtx n) -> Except String (PLift (Γ.toCtx ctx))
+    → (Γ : ACtx n) → Except String (PLift (Γ.toCtx ctx))
   | _, .empty => pure <| .up IsCtx.empty
   | my_is_type, ACtx.extend _ Γ' T' => do
     let ctx_ok ← is_ctx my_is_type Γ'
