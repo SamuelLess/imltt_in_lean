@@ -109,19 +109,84 @@ def ASubst.toSubst {m n : Nat} (σ : ASubst m n) : Subst m n :=
   | .lift σ' => .lift σ'.toSubst
   | .extend σ' t => .extend σ'.toSubst t.toTm
 
-theorem toTm_asubst {n : Nat} (t : ATm n) (σ : ASubst m n) :
+-- the following was generated with the help of Claude Sonnet 4.5
+
+theorem toSubst_lift_n {m n : Nat} (σ : ASubst m n) (k : Nat) :
+    (lift_subst_n' k σ).toSubst = lift_subst_n k σ.toSubst := by
+  induction k with
+  | zero => rfl
+  | succ k' ih => simp [lift_subst_n', lift_subst_n, ih, ASubst.toSubst]
+
+theorem toTm_substitute_var {m n : Nat} (σ : ASubst m n) (x : Fin n) :
+    (substitute_var' σ x).toTm = substitute_var σ.toSubst x := by
+  induction σ with
+  | weak ρ =>
+    simp [substitute_var', substitute_var, ASubst.toSubst]
+    rfl
+  | shift σ' ih =>
+    simp [substitute_var', substitute_var, ASubst.toSubst, shift_tm']
+    rw [toTm_weak, ih]
+  | lift σ' ih =>
+    cases x with
+    | mk x' h =>
+      cases x' with
+      | zero =>
+        simp [substitute_var', substitute_var, ASubst.toSubst]
+        rfl
+      | succ x'' =>
+        simp [substitute_var', substitute_var, ASubst.toSubst, shift_tm']
+        rw [toTm_weak, ih]
+  | extend σ' t ih =>
+    cases x with
+    | mk x' h =>
+      cases x' with
+      | zero =>
+        simp [substitute_var', substitute_var, ASubst.toSubst]
+        rfl
+      | succ x'' =>
+        simp [substitute_var', substitute_var, ASubst.toSubst]
+        exact ih _
+
+theorem toTm_asubst {m n : Nat} (t : ATm n) (σ : ASubst m n) :
     (t⌈ₐσ⌉).toTm = t.toTm⌈σ.toSubst⌉ := by
-  sorry
+  induction t generalizing m with
+  | var x =>
+    simp only [substitute', substitute, ATm.toTm]
+    exact toTm_substitute_var σ x
+  | pi A B ihA ihB =>
+    simp only [substitute', ATm.toTm, substitute, ihA]
+    rw [ihB, ← toSubst_lift_n]
+  | sigma A B ihA ihB =>
+    simp only [substitute', ATm.toTm, substitute, ihA]
+    rw [ihB, ← toSubst_lift_n]
+  | iden A a a' ihA iha iha' =>
+    simp only [substitute', ATm.toTm, substitute, ihA, iha, iha']
+  | indUnit A b a ihA ihb iha =>
+    simp only [substitute', ATm.toTm, substitute, ihb, iha]
+    rw [ihA, ← toSubst_lift_n]
+  | indEmpty A b ihA ihb =>
+    simp only [substitute', ATm.toTm, substitute, ihb]
+    rw [ihA, ← toSubst_lift_n]
+  | lam A b ihA ihb =>
+    simp only [substitute', ATm.toTm, substitute, ihA]
+    rw [ihb, ← toSubst_lift_n]
+  | app f a ihf iha =>
+    simp only [substitute', ATm.toTm, substitute, ihf, iha]
+  | pairSigma a b B iha ihb ihB =>
+    simp only [substitute', ATm.toTm, substitute, iha, ihb]
+  | indSigma A B C c p ihA ihB ihC ihc ihp =>
+    simp only [substitute', ATm.toTm, substitute, ihA, ihB, ihC, ihc, ihp, ← toSubst_lift_n]
+  | succNat x ih =>
+    simp only [substitute', ATm.toTm, substitute, ih]
+  | indNat A z s n ihA ihz ihs ihn =>
+    simp only [substitute', ATm.toTm, substitute, ihz, ihn]
+    rw [ihA, ihs, ← toSubst_lift_n, ← toSubst_lift_n]
+  | refl A a ihA iha =>
+    simp only [substitute', ATm.toTm, substitute, ihA, iha]
+  | j A B b a a' p ihA ihB ihb iha iha' ihp =>
+    simp only [substitute', ATm.toTm, substitute, ihA, iha, iha', ihp]
+    rw [ihB, ihb, ← toSubst_lift_n, ← toSubst_lift_n]
+  | _ => simp only [substitute', ATm.toTm, substitute]
 
 theorem toTm_subst {n : Nat} (t : ATm (n+1)) (a : ATm n) :
     (t⌈ₐa⌉₀).toTm = t.toTm⌈a.toTm⌉₀ := by apply toTm_asubst
-
-/-
-Γ.toCtx ⬝ A.toTm ⬝ B.toTm ⊢ c.toTm ∶ C⌈ₐ(ₐₛ↑ₚ↑ₚidₚ)⋄ₐ (ATm.var 1).pairSigma (ATm.var 0) (B⌊ₐ↑ₚ↑ₚidₚ⌋)⌉.toTm
-⊢ Γ.toCtx ⬝ A.toTm ⬝ B.toTm ⊢ c.toTm ∶ C.toTm⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉
--/
-
-/-
-h : Γ.toCtx ⬝ ATm.nat.toTm ⬝ A.toTm ⊢ s.toTm ∶ A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (ATm.var 0).succNat⌉⌊ₐ↑ₚidₚ⌋.toTm
-⊢ Γ.toCtx ⬝ 𝒩 ⬝ A.toTm ⊢ s.toTm ∶ A.toTm⌈(ₛ↑ₚidₚ)⋄ 𝓈(v(0))⌉⌊↑ₚidₚ⌋
--/
