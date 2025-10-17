@@ -38,7 +38,4 @@ notation:95 A "⌊ₐ" ρ "⌋" => weaken' ρ A
 
 theorem toTm_weak {m n : Nat} (ρ : Weak m n) (t : ATm n) :
     ATm.toTm (weaken' ρ t) = t.toTm⌊ρ⌋ := by
-  --unfold ATm.toTm
-  induction t <;> simp [weaken', ATm.toTm, *]
-  · sorry
-  repeat sorry
+  induction t generalizing m <;> simp [weaken', ATm.toTm, *]
