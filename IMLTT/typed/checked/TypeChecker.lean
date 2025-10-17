@@ -7,7 +7,7 @@ import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
 --set_option profiler true
---set_option profiler.threshold 100 -- Optional: only show tactics that take longer than 100ms
+--set_option profiler.threshold 100
 
 def fuel := 200 -- proof go brrr 🚗
 
@@ -279,7 +279,7 @@ mutual
     | 0, Γ, a, a', A =>
       .error s!"is_eq_term: out of fuel with {Γ} ⊢ {a.toTm} ≡ {a'.toTm} : {A.toTm}"
     -- variables
-    /-| f+1, ACtx.extend _ Γ T, .var 0, .var 0, T' => do
+    | f+1, ACtx.extend _ Γ T, .var 0, .var 0, T' => do
       let is_type_T ← is_type f _ Γ T
       let is_eq_T_T' ← is_eq_type f (Γ ⬝a T) (T⌊ₐ↑ₚidₚ⌋) T'
       have := IsEqualTerm.var_eq is_type_T.down
@@ -342,8 +342,8 @@ mutual
         rewrite [toTm_subst] at h
         exact h
       return .up <| IsEqualTerm.ty_conv_eq this <|
-        (toTm_subst _ (a.pairSigma b B)) ▸ is_eq_type_C_T.down-/
-    /-| f+1, Γ, .indNat A z s .zeroNat, t, T => do
+        (toTm_subst _ (a.pairSigma b B)) ▸ is_eq_type_C_T.down
+    | f+1, Γ, .indNat A z s .zeroNat, t, T => do
       let is_type_A ← is_type f _ (Γ ⬝a .nat) A
       let has_type_z ← has_type f Γ z (A⌈ₐ.zeroNat⌉₀)
       let has_type_s ← has_type f ((Γ ⬝a .nat) ⬝a A) s (A⌈ₐ(ₐₛ↑ₚidₚ)⋄ₐ (.succNat (.var 0))⌉⌊ₐ↑ₚidₚ⌋)
@@ -384,7 +384,7 @@ mutual
         rewrite [toTm_asubst] at h
         rewrite [toTm_subst] at h
         exact h
-      return .up <| IsEqualTerm.ty_conv_eq this ((toTm_subst _ (.succNat n)) ▸ is_eq_type_A_T.down)-/
+      return .up <| IsEqualTerm.ty_conv_eq this ((toTm_subst _ (.succNat n)) ▸ is_eq_type_A_T.down)
     | f+1, Γ, .j A B b a₁ a₂ (.refl A_refl a_refl), t, T => do
       let is_type_B ← is_type f _ (((Γ ⬝a A) ⬝a A⌊ₐ↑ₚidₚ⌋) ⬝a (.iden (A⌊ₐ↑ₚ↑ₚidₚ⌋) (.var 1) (.var 0))) B
       let has_type_b ← has_type f (Γ ⬝a A) b (B⌈ₐ(ₐₛidₚ)⋄ₐ (.var 0)⋄ₐ .refl (A⌊ₐ↑ₚidₚ⌋) (.var 0)⌉)
@@ -427,12 +427,8 @@ mutual
         · let h := is_eq_type_B_T.down
           simp [toTm_asubst] at h ⊢
           exact h
-      /-return .up <| IsEqualTerm.ty_conv_eq term_trans <| by
-        let h := is_eq_type_B_T.down
-        simp [toTm_asubst] at h ⊢
-        exact h-/
     -- congruence rules
-    /-| f+1, Γ,.tt, .tt, .unit => do
+    | f+1, Γ,.tt, .tt, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.unit_intro_eq ctx_ok.down
     | f+1, Γ, (.indUnit A b a), (.indUnit A' b' a'), Asubst => do
@@ -542,9 +538,9 @@ mutual
           · exact (← is_eq_term f Γ p p' (A.iden a₁ a₃)).down
         · let h := (← is_eq_type f Γ (B⌈ₐ(ₐₛidₚ)⋄ₐ a₁⋄ₐ a₃⋄ₐ p⌉) T).down
           rewrite [toTm_asubst] at h
-          exact h-/
+          exact h
     -- univ rules
-    /-| f+1, Γ, .unit, .unit, Univ => do
+    | f+1, Γ, .unit, .unit, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ .univ Univ
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsEqualTerm.ty_conv_eq
@@ -579,7 +575,7 @@ mutual
       return .up <| IsEqualTerm.ty_conv_eq
         (IsEqualTerm.univ_iden_eq
           is_eq_term_A_A'.down is_eq_term_a₁_a₃.down is_eq_term_a₂_a₄.down) is_eq_type_U_Univ.down
-    -- conversion-/
+    -- conversion
     | f+1, Γ, a, a', A => do
       let is_eq_symm ← is_eq_term f Γ a' a A
       return .up <| IsEqualTerm.term_symm is_eq_symm.down
