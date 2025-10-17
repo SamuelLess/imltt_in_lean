@@ -248,5 +248,11 @@ elab "[acx|" Γ:actx "]" : term => do
   let ⟨_, ⟨_, actx⟩⟩ ← elabACtx [] Γ
   return Lean.toExpr actx
 
+/-- info: ACtx.empty : ACtx 0 -/
+#guard_msgs in
 #check [acx| ε]
+/--
+info: ACtx.extend `z (ACtx.extend `y (ACtx.extend `x ACtx.empty ATm.unit) ATm.univ) (ATm.var 0) : ACtx (2 + 1)
+-/
+#guard_msgs in
 #check [acx| ε ⬝ (x : 𝟙) ⬝ (y : 𝒰) ⬝ (z : y)]

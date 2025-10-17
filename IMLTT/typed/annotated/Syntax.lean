@@ -30,6 +30,8 @@ inductive ATm : Nat → Type where
   | j : ATm n → ATm (n + 3) → ATm (n + 1) → ATm n → ATm n → ATm n → ATm n
   deriving Repr, Nonempty, Lean.ToExpr
 
+/-- info: ATm.var ⟨0, ⋯⟩ : ATm 1 -/
+#guard_msgs in
 #check (ATm.var ⟨0, by omega⟩ : ATm (1))
 
 def ATm.toTm {n} : ATm n → Tm n
@@ -116,12 +118,6 @@ syntax "refl" "(" atm atm ")" : atm
 syntax "j" "(" ident ident ident atm atm atm atm atm atm ")" : atm
 syntax atm "⌈" term "⌉" : atm
 syntax atm "⌊" term "⌋" : atm
-
-#check_failure `(atm|𝟙 → 𝟙)
-#check_failure `(atm|Π(x : 𝟙;𝟙))
-#check_failure `(atm|Σ(x : 𝒰;x))
-#check_failure `(atm| ind0(a P b))
-#check_failure `(atm| indS(a b p A B C c p))
 
 inductive ACtx : Nat → Type where
   | empty : ACtx 0
