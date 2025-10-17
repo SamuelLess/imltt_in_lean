@@ -1259,7 +1259,7 @@ theorem substitution_gen_iden_elim_eq :
     → Γ_1 ⊗ ⌈s⌉(Δ w/Nat.le_refl l) ⊢ a⌈s/ₙleq⌉ ≡ a'⌈s/ₙleq⌉ ∶ A_1⌈s/ₙleq⌉ :=
   by
     intro n Γ' A B B' b b' a₁ a₃ A' a₂ a₄ p p' hBB hbbB hAA haaA haaA' hppId ihBB ihbbB ihAA ihaaA ihaaA' ihppId
-    intro m l hleq Γ Δ heqM s S t t' T heqΓ heqt heqt' heqT hsS
+      m l hleq Γ Δ heqM s S t t' T heqΓ heqt heqt' heqT hsS
     cases heqM
     cases heqΓ
     cases heqt

@@ -767,7 +767,7 @@ theorem weakening_iden_elim :
     → (Γ_1 ⬝ S ⊗ ⌊↑₁↬l⌋Δ) ⊢ a_9⌊↑₁m↬l⌋ ∶ A_1⌊↑₁m↬l⌋ :=
   by
     intro n Γ A B b a a' p hB hbB haA haA' hpId ihB ihbB ihaA ihaA' ihpId
-    intro m l Γ Δ heqM S t T hS heqΓ heqt heqT
+      m l Γ Δ heqM S t T hS heqΓ heqt heqT
     cases heqM
     cases heqΓ
     cases heqt

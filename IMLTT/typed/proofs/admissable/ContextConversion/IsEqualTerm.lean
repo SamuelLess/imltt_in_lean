@@ -867,7 +867,7 @@ theorem context_conversion_sigma_elim_eq :
     → Γ_1 ⬝ S' ⊗ Δ ⊢ a ≡ a' ∶ A_1 :=
   by
     intro n Γ' A B A' B' p p' C C' c c' hCC hccC hAA hBB hppSi ihCC ihccC ihAA ihBB ihppSi
-    intro m l Γ Δ heqM S S' t t' T hSS hS hS' heqΓ heqt heqt' heqT
+      m l Γ Δ heqM S S' t t' T hSS hS hS' heqΓ heqt heqt' heqT
     cases heqM
     cases heqΓ
     cases heqt
@@ -1172,7 +1172,7 @@ theorem context_conversion_iden_elim_eq :
     → Γ_1 ⬝ S' ⊗ Δ ⊢ a ≡ a' ∶ A_1:=
   by
     intro n Γ' A B B' b b' a₁ a₃ A' a₂ a₄ p p' hBB hbbB hAA haaA haaA' hppId ihBB ihbbB ihAA ihaaA ihaaA' ihppId
-    intro m l Γ Δ heqM S S' t t' T hSS hS hS' heqΓ heqt heqt' heqT
+      m l Γ Δ heqM S S' t t' T hSS hS hS' heqΓ heqt heqt' heqT
     cases heqM
     cases heqΓ
     cases heqt

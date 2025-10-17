@@ -770,7 +770,7 @@ theorem weakening_sigma_elim_eq :
     → (Γ_1 ⬝ S ⊗ ⌊↑₁↬l⌋Δ) ⊢ a⌊↑₁m↬l⌋ ≡ a'⌊↑₁m↬l⌋ ∶ A_1⌊↑₁m↬l⌋ :=
   by
     intro n Γ A B A' B' p p' C C' c c' hCC hccC hAA hBB hppSi ihCC ihccC ihAA ihBB ihppSi
-    intro m l Γ Δ heqM S t t' T hS heqΓ heqt heqt' heqT
+      m l Γ Δ heqM S t t' T hS heqΓ heqt heqt' heqT
     cases heqM
     cases heqΓ
     cases heqt
@@ -909,7 +909,7 @@ theorem weakening_nat_elim_eq :
     → (Γ_1 ⬝ S ⊗ ⌊↑₁↬l⌋Δ) ⊢ a⌊↑₁m↬l⌋ ≡ a'⌊↑₁m↬l⌋ ∶ A_1⌊↑₁m↬l⌋ :=
   by
     intro n Γ z z' x x' A A' s s' hAA hzzA hssA hxxNat ihAA ihzzA ihssA ihxxNat
-    intro m l Γ Δ heqM S t t' T hS heqΓ heqt heqt' heqT
+      m l Γ Δ heqM S t t' T hS heqΓ heqt heqt' heqT
     cases heqM
     cases heqΓ
     cases heqt
@@ -1038,7 +1038,7 @@ theorem weakening_iden_elim_eq :
     → (Γ_1 ⬝ S ⊗ ⌊↑₁↬l⌋Δ) ⊢ a⌊↑₁m↬l⌋ ≡ a'⌊↑₁m↬l⌋ ∶ A_1⌊↑₁m↬l⌋ :=
   by
     intro n Γ' A B B' b b' a₁ a₃ A' a₂ a₄ p p' hBB hbbB hAA haaA haaA' hppId ihBB ihbbB ihAA ihaaA ihaaA' ihppId
-    intro m l Γ Δ heqM S t t' T hS heqΓ heqt heqt' heqT
+      m l Γ Δ heqM S t t' T hS heqΓ heqt heqt' heqT
     cases heqM
     cases heqΓ
     cases heqt
