@@ -385,7 +385,52 @@ mutual
         rewrite [toTm_subst] at h
         exact h
       return .up <| IsEqualTerm.ty_conv_eq this ((toTm_subst _ (.succNat n)) ▸ is_eq_type_A_T.down)-/
-    -- TODO: add J computation rule here
+    | f+1, Γ, .j A B b a₁ a₂ (.refl A_refl a_refl), t, T => do
+      let is_type_B ← is_type f _ (((Γ ⬝a A) ⬝a A⌊ₐ↑ₚidₚ⌋) ⬝a (.iden (A⌊ₐ↑ₚ↑ₚidₚ⌋) (.var 1) (.var 0))) B
+      let has_type_b ← has_type f (Γ ⬝a A) b (B⌈ₐ(ₐₛidₚ)⋄ₐ (.var 0)⋄ₐ .refl (A⌊ₐ↑ₚidₚ⌋) (.var 0)⌉)
+      let has_type_a_refl ← has_type f Γ a_refl A
+      have iden_comp := IsEqualTerm.iden_comp
+        (by
+          let h := is_type_B.down
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toCtx_extend] at h
+          rewrite [toTm_weak] at h
+          simp [ATm.toTm] at h
+          rewrite [toTm_weak] at h
+          exact h)
+        (by
+          let h := has_type_b.down
+          rewrite [toCtx_extend] at h
+          rewrite [toTm_asubst] at h
+          simp [ASubst.toSubst, ATm.toTm] at h
+          rewrite [toTm_weak] at h
+          exact h)
+        has_type_a_refl.down
+      -- Now connect to the target
+      let is_eq_term_b ← is_eq_term f Γ (b⌈ₐa_refl⌉₀) t (B⌈ₐ(ₐₛidₚ)⋄ₐ a_refl⋄ₐ a_refl⋄ₐ .refl A a_refl⌉)
+      let is_eq_type_B_T ← is_eq_type f Γ (B⌈ₐ(ₐₛidₚ)⋄ₐ a_refl⋄ₐ a_refl⋄ₐ .refl A a_refl⌉) T
+      have term_trans := IsEqualTerm.term_trans iden_comp <| by
+        let h := is_eq_term_b.down
+        simp [toTm_asubst] at h ⊢
+        exact h
+      return .up <| by
+        apply IsEqualTerm.ty_conv_eq (A:=B.toTm⌈(ₛidₚ)⋄ a_refl.toTm⋄ a_refl.toTm⋄ A.toTm.refl a_refl.toTm⌉)
+        · apply IsEqualTerm.term_symm
+          have term_trans_symm := IsEqualTerm.term_symm term_trans
+          have := IsEqualTerm.term_trans (c:=(A.j B b a₁ a₂ (A_refl.refl a_refl)).toTm) term_trans_symm
+          apply this
+          let is_eq_term_j := (← is_eq_term f Γ (A.j B b a_refl a_refl (A.refl a_refl))
+            (A.j B b a₁ a₂ (A_refl.refl a_refl)) (B⌈ₐ(ₐₛidₚ)⋄ₐ a_refl⋄ₐ a_refl⋄ₐ A.refl a_refl⌉)).down
+          simp [toTm_asubst] at is_eq_term_j
+          exact is_eq_term_j
+        · let h := is_eq_type_B_T.down
+          simp [toTm_asubst] at h ⊢
+          exact h
+      /-return .up <| IsEqualTerm.ty_conv_eq term_trans <| by
+        let h := is_eq_type_B_T.down
+        simp [toTm_asubst] at h ⊢
+        exact h-/
     -- congruence rules
     /-| f+1, Γ,.tt, .tt, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
@@ -426,7 +471,7 @@ mutual
         apply IsEqualTerm.sigma_intro_eq
         · exact (← is_eq_term f Γ a a' A).down
         · exact (toTm_subst _ _) ▸ (← is_eq_term f Γ b b' (B⌈ₐa⌉₀)).down
-        · exact (← is_type f _ (Γ ⬝a A) B).down-/
+        · exact (← is_type f _ (Γ ⬝a A) B).down
     | f+1, Γ, .indSigma A B C c p, .indSigma A' B' C' c' p', T => do
       return .up <| by
         apply IsEqualTerm.ty_conv_eq (A:=C.toTm⌈p.toTm⌉₀) (B:=T.toTm)
@@ -497,7 +542,7 @@ mutual
           · exact (← is_eq_term f Γ p p' (A.iden a₁ a₃)).down
         · let h := (← is_eq_type f Γ (B⌈ₐ(ₐₛidₚ)⋄ₐ a₁⋄ₐ a₃⋄ₐ p⌉) T).down
           rewrite [toTm_asubst] at h
-          exact h
+          exact h-/
     -- univ rules
     /-| f+1, Γ, .unit, .unit, Univ => do
       let is_eq_type_U_Univ ← is_eq_type f Γ .univ Univ
@@ -580,6 +625,6 @@ mutual
         | .error s!"infer_type: expected a lambda term at {g.toTm}"
       let has_type_a ← has_type f Γ a A
       return ⟨B⌈ₐa⌉₀, (toTm_subst _ _) ▸ HasType.pi_elim hg has_type_a.down⟩
-    | f+1, _, t => .error s!"infer_type: unsupported pattern {t.toTm}"
+    | _+1, _, t => .error s!"infer_type: unsupported pattern {t.toTm}"
   termination_by structural fuel
 end
