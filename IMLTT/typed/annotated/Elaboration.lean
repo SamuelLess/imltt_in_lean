@@ -6,6 +6,8 @@ import Qq
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
+-- some parts of this file are heavily inspired by https://github.com/JLimperg/internal-language
+
 def ElabCtx := List Name
 
 namespace ElabCtx
@@ -20,6 +22,17 @@ def getFinIdx? (cx : ElabCtx) (name : Name) : Option ((n : Nat) × (Fin n)) :=
 
 def toStr (cx : ElabCtx) : String := if cx.isEmpty then "ε" else
   String.intercalate ", " (cx.map toString)
+
+def weakenCtx : {m : Nat} → (cx : ElabCtx) → (ρ : Weak m cx.length) → ElabCtx
+  | _, cx, .id => cx
+  | _, cx, .shift ρ' => Name.anonymous :: (weakenCtx cx ρ')
+  | _, name :: rest, .lift ρ' => name :: (weakenCtx rest ρ')
+
+def substituteCtx : {m : Nat} → (cx : ElabCtx) → (ρ : ASubst m cx.length) → ElabCtx
+  | _, cx, .weak ρ' => weakenCtx cx ρ'
+  | _, cx, .shift ρ' => Name.anonymous :: (substituteCtx cx ρ')
+  | _, name :: rest, .lift ρ' => name :: (substituteCtx rest ρ')
+  | _, _ :: rest, .extend ρ' _ => substituteCtx rest ρ'
 
 end ElabCtx
 
@@ -51,7 +64,6 @@ partial def elabWeak (n : Nat) :  TSyntax `weak → TermElabM ((m : Nat) × (Wea
       throwErrorAt w "Cannot shift weakening at context length 0"
   | _ => throwUnsupportedSyntax
 
-
 def evalConstATm : Name → TermElabM (ATm 0) := fun id => do
   let info ← getConstInfo id
   let ttype ← instantiateMVars info.type
@@ -59,6 +71,46 @@ def evalConstATm : Name → TermElabM (ATm 0) := fun id => do
     unsafe evalConst (ATm 0) id
   else
     throwError "Constant '{id}' is not of type 'ATm 0'"
+
+mutual
+partial def elabSubst (cx : ElabCtx) : TSyntax `subst → TermElabM ((m: Nat) × (ASubst m cx.length))
+  | `(subst| ₛ $w:weak) => do
+    let ⟨m, ρ⟩ ← elabWeak cx.length w
+    return ⟨m, .weak ρ⟩
+  | `(subst| ↑ₛ $σ:subst) => do
+    let ⟨m, ρ⟩ ← elabSubst (cx.drop 1) σ
+    if h : cx.length = (cx.drop 1).length + 1 then
+      return ⟨m + 1, h ▸ .lift ρ⟩
+    else
+      throwErrorAt σ "Cannot shift substitution at context length 0"
+  | `(subst| ⇑ₛ $σ:subst) => do
+    let ⟨m, ρ⟩ ← elabSubst cx σ
+    return ⟨m + 1,.shift ρ⟩
+  | `(subst| ₙ⇑ₛ $i:num $σ:subst) => do
+    let iVal := i.getNat
+    let rec buildLift {m' n' : Nat} (k : Nat) (ρ : ASubst m' n') : TermElabM (ASubst (m' + k) (n' + k)) :=
+      match k with
+      | 0 => return ρ
+      | k' + 1 => do
+        let lifted ← buildLift k' ρ
+        return .lift lifted
+    let ⟨m,ρ⟩ ← elabSubst (cx.drop iVal) σ
+    let lifted ← buildLift iVal ρ
+    if h : cx.length = (cx.drop iVal).length + iVal then
+      return ⟨m + iVal, h ▸ lifted⟩
+    else
+      throwErrorAt σ "Cannot shift substitution at context length 0"
+  | `(subst| $σ:subst ⋄ $t:atm) => do
+    let ⟨m, ρ⟩ ← elabSubst cx σ
+    let ⟨nt, tE⟩ ← elabATm (cx.substituteCtx ρ) t
+    if h : nt = m then
+      let tE' : ATm m := h ▸ tE
+      let extended := ASubst.extend ρ tE'
+      return ⟨m, extended⟩
+    else
+      throwErrorAt t "Term missmatch in substitution extension"
+  | _ => throwUnsupportedSyntax
+
 
 partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm n)
   | `(atm| $id:ident) => do
@@ -254,6 +306,7 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     let tE' : ATm mW := (weaken' ρ tE)
     return ⟨mW, tE'⟩
   | _ => throwUnsupportedSyntax
+end
 
 elab "[atm|" t:atm "]" : term => do
   let ⟨_, atm⟩ ← elabATm [] t
