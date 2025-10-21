@@ -15,10 +15,10 @@ structure InstIsCtx (n : Nat) where
 partial def elabIsCtx (stxcx : TSyntax `actx) :
     TermElabM Q((n : Nat) × InstIsCtx n) := do
   let ⟨_, ⟨n, actx⟩⟩ ← elabACtx [] stxcx
-  match is_ctx (is_type 30) actx with
+  match is_ctx (is_type fuel) actx with
   | Except.ok _ =>
     let ctxE : Q(ACtx $n) := Lean.toExpr actx
-    match ← whnf q(is_ctx (is_type 30) $ctxE) with
+    match ← whnf q(is_ctx (is_type fuel) $ctxE) with
     | mkApp _ pr =>
       let ttm := mkApp3 (mkConst ``InstIsCtx.mk)
         (mkNatLit n)
@@ -45,11 +45,11 @@ partial def elabIsType (stxcx : TSyntax `actx) (stxT : TSyntax `atm) :
   let ⟨nT, aTm⟩ ← elabATm cx stxT
   if h : n = nT then
     let T : ATm n := h ▸ aTm
-    match is_type 30 n actx T with
+    match is_type fuel n actx T with
     | Except.ok _ =>
       let ctxE : Q(ACtx $n) := Lean.toExpr actx
       let TE : Q(ATm $n) := Lean.toExpr T
-      match ← whnf q(is_type 30 _ $ctxE $TE) with
+      match ← whnf q(is_type fuel _ $ctxE $TE) with
       | mkApp _ pr =>
         let ttm := mkApp4 (mkConst ``InstIsType.mk)
           (mkNatLit n)
@@ -81,12 +81,12 @@ partial def elabHasType (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) :
   if h : n = nt ∧ n = nT then
     let t : ATm n := h.left ▸ atm
     let T : ATm n := h.right ▸ aTm
-    match has_type 30 actx t T with
+    match has_type fuel actx t T with
     | Except.ok _ =>
       let ctxE : Q(ACtx $n) := Lean.toExpr actx
       let tE : Q(ATm $n) := Lean.toExpr t
       let TE : Q(ATm $n) := Lean.toExpr T
-      match ← whnf q(has_type 30 $ctxE $tE $TE) with
+      match ← whnf q(has_type fuel $ctxE $tE $TE) with
       | mkApp _ pr =>
         let ttm := mkApp5 (mkConst ``InstHasType.mk)
           (mkNatLit n)
@@ -123,12 +123,12 @@ partial def elabIsEqualType (stxcx : TSyntax `actx) (stxT stxT' : TSyntax `atm) 
   if h : n = nT ∧ n = nT' then
     let T : ATm n := h.left ▸ aTm
     let T' : ATm n := h.right ▸ aTm'
-    match is_eq_type 30 actx T T' with
+    match is_eq_type fuel actx T T' with
     | Except.ok _ =>
       let ctxE : Q(ACtx $n) := Lean.toExpr actx
       let TE : Q(ATm $n) := Lean.toExpr T
       let TE' : Q(ATm $n) := Lean.toExpr T'
-      match ← whnf q(is_eq_type 30 $ctxE $TE $TE') with
+      match ← whnf q(is_eq_type fuel $ctxE $TE $TE') with
       | mkApp _ pr =>
         let ttm := mkApp5 (mkConst ``InstIsEqualType.mk)
           (mkNatLit n)
@@ -164,13 +164,13 @@ partial def elabIsEqualTerm (stxcx : TSyntax `actx) (stxt stxt' stxT : TSyntax `
     let t : ATm n := h.left ▸ atm
     let t' : ATm n := h.right.left ▸ atm'
     let T : ATm n := h.right.right ▸ aTm
-    match is_eq_term 30 actx t t' T with
+    match is_eq_term fuel actx t t' T with
     | Except.ok _ =>
       let ctxE : Q(ACtx $n) := Lean.toExpr actx
       let tE : Q(ATm $n) := Lean.toExpr t
       let tE' : Q(ATm $n) := Lean.toExpr t'
       let TE : Q(ATm $n) := Lean.toExpr T
-      match ← whnf q(is_eq_term 30 $ctxE $tE $tE' $TE) with
+      match ← whnf q(is_eq_term fuel $ctxE $tE $tE' $TE) with
       | mkApp _ pr =>
         let ttm := mkApp6 (mkConst ``InstIsEqualTerm.mk)
           (mkNatLit n)

@@ -1,5 +1,4 @@
 import IMLTT.typed.annotated.Syntax
-import IMLTT.typed.annotated.Elaboration
 import IMLTT.untyped.Weakening
 
 @[simp]
@@ -33,7 +32,6 @@ def weaken' (ρ : Weak m n) (t : ATm n) : ATm m :=
 def shift_tm' : ATm n → ATm (n + 1)
   | t => weaken' (.shift .id) t
 
--- notation:97 "⇑ₙ" n "⊖" l "↑₁"  => weaken_from n l
 notation:95 A "⌊ₐ" ρ "⌋" => weaken' ρ A
 
 theorem toTm_weak {m n : Nat} (ρ : Weak m n) (t : ATm n) :
