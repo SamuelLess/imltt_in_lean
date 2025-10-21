@@ -116,8 +116,18 @@ syntax "𝓈(" atm ")" : atm
 syntax "indN" "(" ident ident atm atm atm atm ")" : atm
 syntax "refl" "(" atm atm ")" : atm
 syntax "j" "(" ident ident ident atm atm atm atm atm atm ")" : atm
-syntax atm "⌈" term "⌉" : atm
-syntax atm "⌊" term "⌋" : atm
+
+declare_syntax_cat weak (behavior := both)
+syntax atm "⌊" weak "⌋" : atm
+syntax "idₚ" : weak
+syntax "↑ₚ" weak : weak
+syntax "⇑ₚ" weak : weak
+syntax "ₙ⇑ₚ" num weak : weak
+syntax "↑₁" weak "ₙ⇑ₚ" num : weak
+
+declare_syntax_cat subst (behavior := both)
+syntax atm "⌈" subst "⌉" : atm
+syntax atm "⌈" subst "⌉₀" : atm
 
 inductive ACtx : Nat → Type where
   | empty : ACtx 0

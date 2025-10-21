@@ -66,6 +66,5 @@ prefix:97 "↑ₚ" => Weak.shift
 prefix:97 "⇑ₚ" => Weak.lift
 infixl:97 "ₙ⇑ₚ" => lift_weak_n
 notation:97 "↑₁" n "↬" l => weaken_from n l
--- notation:97 "⇑ₙ" n "⊖" l "↑₁"  => weaken_from n l
 notation:95 v "⌊" ρ "⌋ᵥ" => weaken_var ρ v
 notation:95 A "⌊" ρ "⌋" => weaken ρ A

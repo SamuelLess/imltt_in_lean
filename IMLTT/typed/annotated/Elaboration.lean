@@ -1,4 +1,6 @@
 import IMLTT.typed.annotated.Syntax
+import IMLTT.typed.annotated.Weakening
+import IMLTT.typed.annotated.Substitution
 
 import Qq
 
@@ -20,6 +22,35 @@ def toStr (cx : ElabCtx) : String := if cx.isEmpty then "ε" else
   String.intercalate ", " (cx.map toString)
 
 end ElabCtx
+
+partial def elabWeak (n : Nat) :  TSyntax `weak → TermElabM ((m : Nat) × (Weak m n))
+  | `(weak| idₚ) => do
+    return ⟨n, idₚ⟩
+  | `(weak| ↑ₚ $w:weak) => do
+    let ⟨m, ρ⟩ ← elabWeak (n-1) w
+    if h : n = n - 1 + 1 then
+      return ⟨m + 1, h ▸ .lift ρ⟩
+    else
+      throwErrorAt w "Cannot shift weakening at context length 0"
+  | `(weak| ⇑ₚ $w:weak) => do
+    let ⟨m, ρ⟩ ← elabWeak n w
+    return ⟨m + 1,.shift ρ⟩
+  | `(weak| ↑₁ $w:weak ₙ⇑ₚ $i:num) => do
+    let iVal := i.getNat
+    let rec buildLift {m' n' : Nat} (k : Nat) (ρ : Weak m' n') : TermElabM (Weak (m' + k) (n' + k)) :=
+      match k with
+      | 0 => return ρ
+      | k' + 1 => do
+        let lifted ← buildLift k' ρ
+        return .lift lifted
+    let ⟨m,ρ⟩ ← elabWeak (n-iVal) w
+    let lifted ← buildLift iVal ρ
+    if h : n = n - iVal + iVal then
+      return ⟨m + iVal, h ▸ lifted⟩
+    else
+      throwErrorAt w "Cannot shift weakening at context length 0"
+  | _ => throwUnsupportedSyntax
+
 
 def evalConstATm : Name → TermElabM (ATm 0) := fun id => do
   let info ← getConstInfo id
@@ -217,6 +248,11 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨nA, ATm.j tA tB' tb' tap ta'' tp'⟩
     else
       throwError m!"Context length mismatch in j"
+  | `(atm| $t:atm ⌊$w:weak⌋) => do
+    let ⟨n, tE⟩ ← elabATm cx t
+    let ⟨mW, ρ⟩ ← elabWeak n w
+    let tE' : ATm mW := (weaken' ρ tE)
+    return ⟨mW, tE'⟩
   | _ => throwUnsupportedSyntax
 
 elab "[atm|" t:atm "]" : term => do
