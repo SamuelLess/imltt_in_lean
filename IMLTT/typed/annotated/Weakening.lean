@@ -35,5 +35,5 @@ def shift_tm' : ATm n → ATm (n + 1)
 notation:95 A "⌊ₐ" ρ "⌋" => weaken' ρ A
 
 theorem toTm_weak {m n : Nat} (ρ : Weak m n) (t : ATm n) :
-    ATm.toTm (weaken' ρ t) = t.toTm⌊ρ⌋ := by
+    ATm.toTm (t⌊ₐρ⌋) = t.toTm⌊ρ⌋ := by
   induction t generalizing m <;> simp [weaken', ATm.toTm, *]

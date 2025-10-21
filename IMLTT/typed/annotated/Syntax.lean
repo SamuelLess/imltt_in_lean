@@ -126,8 +126,13 @@ syntax "ₙ⇑ₚ" num weak : weak
 syntax "↑₁" weak "ₙ⇑ₚ" num : weak
 
 declare_syntax_cat subst (behavior := both)
+syntax "ₛ" weak : subst
+syntax "↑ₛ" subst : subst
+syntax "⇑ₛ" subst : subst
+syntax "ₙ⇑ₛ" num subst : subst
+syntax subst "⋄" atm : subst
 syntax atm "⌈" subst "⌉" : atm
-syntax atm "⌈" subst "⌉₀" : atm
+syntax atm "⌈" atm "⌉₀" : atm
 
 inductive ACtx : Nat → Type where
   | empty : ACtx 0
