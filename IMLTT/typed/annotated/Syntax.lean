@@ -132,9 +132,7 @@ syntax "⇑ₛ" subst : subst
 syntax "ₙ⇑ₛ" num subst : subst
 syntax subst "⋄" atm : subst
 syntax atm "⌈" subst "⌉" : atm
-syntax atm "⌈" subst "⌉ᵥ" : atm
-syntax atm "⌈" subst "/" ident "⌉ᵥ" : atm
-syntax atm "⌈" subst "⌉₀" : atm
+syntax atm "⌈" atm "⌉₀" : atm
 
 inductive ACtx : Nat → Type where
   | empty : ACtx 0

@@ -41,6 +41,7 @@ partial def elabWeak (n : Nat) :  TSyntax `weak → TermElabM ((m : Nat) × (Wea
     return ⟨n, idₚ⟩
   | `(weak| ↑ₚ $w:weak) => do
     let ⟨m, ρ⟩ ← elabWeak (n-1) w
+    logInfo m!"elabWeak: n={n}, m={m}"
     if h : n = n - 1 + 1 then
       return ⟨m + 1, h ▸ .lift ρ⟩
     else
@@ -101,16 +102,16 @@ partial def elabSubst (cx : ElabCtx) : TSyntax `subst → TermElabM ((m: Nat) ×
     else
       throwErrorAt σ "Cannot shift substitution at context length 0"
   | `(subst| $σ:subst ⋄ $t:atm) => do
-    let ⟨m, ρ⟩ ← elabSubst cx σ
-    let ⟨nt, tE⟩ ← elabATm (cx.substituteCtx ρ) t
-    if h : nt = m then
-      let tE' : ATm m := h ▸ tE
+    let ⟨m, ρ⟩ ← elabSubst (cx.drop 1) σ
+    let substCx := ElabCtx.substituteCtx (cx.drop 1) ρ
+    let ⟨nt, tE⟩ ← elabATm substCx t
+    if h : nt = m ∧ cx.length = (cx.drop 1).length + 1 then
+      let tE' : ATm m := h.left ▸ tE
       let extended := ASubst.extend ρ tE'
-      return ⟨m, extended⟩
+      return ⟨m, h.right ▸ extended⟩
     else
       throwErrorAt t "Term missmatch in substitution extension"
   | _ => throwUnsupportedSyntax
-
 
 partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm n)
   | `(atm| $id:ident) => do
@@ -305,6 +306,23 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     let ⟨mW, ρ⟩ ← elabWeak n w
     let tE' : ATm mW := (weaken' ρ tE)
     return ⟨mW, tE'⟩
+  | `(atm| $t:atm ⌈$σ:subst⌉) => do
+    let ⟨n, tE⟩ ← elabATm cx t
+    let ⟨mS, ρ⟩ ← elabSubst cx σ
+    if h : n = cx.length then
+      let tE' : ATm mS := (substitute' ρ (h ▸ tE))
+      return ⟨mS, tE'⟩
+    throwError m!"Critical: Substitution context length mismatch: expected {cx.length}, got {n}"
+  | `(atm| $t:atm ⌈$a:atm⌉₀) => do
+    if cx.isEmpty then
+      throwErrorAt a "Cannot perform zero substitution in empty context"
+    let ⟨n, tE⟩ ← elabATm cx t
+    -- this is a non-enforced invariant for non-empty contexts except for weakenings/substitutions
+    let ⟨na, aE⟩ ← elabATm (cx.drop 1) a
+    if h : n = na + 1 then
+      let out := substitute_zero' aE (h ▸ tE)
+      return ⟨na, out⟩
+    throwErrorAt a "Term missmatch in zero substitution"
   | _ => throwUnsupportedSyntax
 end
 
@@ -315,6 +333,8 @@ elab "[atm|" t:atm "]" : term => do
 def testunit : ATm 0 := [atm| 𝟙]
 example : ATm 0 := [atm| λ (x : testunit). x]
 example : ATm 0 := [atm| Π (x : 𝒰; x)]
+example : ATm 0 := [atm| Π (x : 𝒰; x)⌈ₛidₚ⌉]
+def subst_example : ATm 0 := [atm| Π (x : 𝒰; ((x)⌈𝟙⌉₀)⌊⇑ₚidₚ⌋)]
 
 partial def elabACtx (cx : ElabCtx) : TSyntax `actx → TermElabM (ElabCtx × ((n : Nat) × ACtx n))
   | `(actx| ε) => do
