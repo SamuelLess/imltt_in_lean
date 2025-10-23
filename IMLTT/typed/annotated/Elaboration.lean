@@ -126,37 +126,22 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       catch _ => throwErrorAt id "Unexpected identifier '{id'}', context: {cx.toStr}"
   | `(atm| ($t:atm)) => elabATm cx t
   -- types
-  | `(atm| 𝟘) => do
-    let n : Nat := cx.length
-    return ⟨n, .empty⟩
-  | `(atm| 𝟙) => do
-    let n : Nat := cx.length
-    return ⟨n, .unit⟩
-  | `(atm| 𝒩) => do
-    let n : Nat := cx.length
-    return ⟨n, .nat⟩
-  | `(atm| 𝒰) => do
-    let n : Nat := cx.length
-    return ⟨n, .univ⟩
+  | `(atm| 𝟘) => return ⟨cx.length, .empty⟩
+  | `(atm| 𝟙) => return ⟨cx.length, .unit⟩
+  | `(atm| 𝒩) => do return ⟨cx.length, .nat⟩
+  | `(atm| 𝒰) => do return ⟨cx.length, .univ⟩
   | `(atm| $A:atm → $B:atm) => do
-    let ⟨n, AE⟩ ← elabATm cx A
-    let ⟨n', BE⟩ ← elabATm (cx.extend Name.anonymous) B
-    --if ← isDefEq q($n') q($n+1) then
+    let ⟨n, A'⟩ ← elabATm cx A
+    let ⟨n', B'⟩ ← elabATm (cx.extend .anonymous) B
     if h : n+1 = n' then
-      let bbE : (ATm (n+1)) := h ▸ BE
-      let piE : (ATm n) := ATm.pi AE bbE
-      return ⟨n, piE⟩
+      return ⟨n, ATm.pi A' <| h ▸ B'⟩
     else
       throwErrorAt B m!"Context length mismatch: expected {n'}+1, got {n}"
   | `(atm| Π ($id:ident : $A:atm; $B:atm)) => do
-    let ⟨n, AE⟩ ← elabATm cx A
-    let id' := id.getId
-    let ⟨n', BE⟩ ← elabATm (cx.extend id') B
-    --if ← isDefEq q($n') q($n+1) then
+    let ⟨n, A'⟩ ← elabATm cx A
+    let ⟨n', B'⟩ ← elabATm (cx.extend id.getId) B
     if h : n+1 = n' then
-      let bbE : (ATm (n+1)) := h ▸ BE
-      let piE : (ATm n) := ATm.pi AE bbE
-      return ⟨n, piE⟩
+      return ⟨n, ATm.pi A' <| h ▸ B'⟩
     else
       throwErrorAt B m!"Context length mismatch: expected {n'}+1, got {n}"
   | `(atm| Σ ($id:ident : $A:atm; $B:atm)) => do
@@ -238,7 +223,6 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
       return ⟨n, pairE⟩
     else
       throwErrorAt b m!"Term missmatch: expected context length {n}, got {n'} and {n''}"
-  -- syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
   -- syntax "indS" "(" ident ident ident atm atm atm atm atm ")" : atm
   | `(atm| indS($a:ident $b:ident $pid:ident $A:atm $B:atm $C:atm $c:atm $p:atm)) => do
     let ⟨n, tA⟩ ← elabATm cx A
@@ -335,6 +319,7 @@ example : ATm 0 := [atm| λ (x : testunit). x]
 example : ATm 0 := [atm| Π (x : 𝒰; x)]
 example : ATm 0 := [atm| Π (x : 𝒰; x)⌈ₛidₚ⌉]
 def subst_example : ATm 0 := [atm| Π (x : 𝒰; ((x)⌈𝟙⌉₀)⌊⇑ₚidₚ⌋)]
+def app_assoc_example := [atm| λ (a : 𝒩). λ (b : 𝒰). λ (c : 𝒰). a ◃ b ◃ c]
 
 partial def elabACtx (cx : ElabCtx) : TSyntax `actx → TermElabM (ElabCtx × ((n : Nat) × ACtx n))
   | `(actx| ε) => do

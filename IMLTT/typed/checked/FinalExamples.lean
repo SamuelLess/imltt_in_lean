@@ -40,12 +40,39 @@ ttheorem typeid3 : ε ⊢ ret_id ≡ ret_id : type_id
 ttheorem type_rfl : ε ⬝ (A : 𝒰) ⊢ A ≡ A type
 ttheorem elem_rlf : ε ⬝ (A : 𝒰) ⬝ (a : A) ⊢ a ≡ a : A
 
+ttheorem fun_ext : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (f : A → B) ⊢ λ(a : A). (f ◃ a) : A → B
+
 ttheorem subst_b : ε ⊢ ((λ (a : 𝟙). a))◃ ⋆ ≡ ⋆ : 𝟙
 ttheorem subst_b' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
 ttheorem subst_ : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
 ttheorem subst_b'' : ε ⊢ ((λ (A : 𝒰). A) ◃ 𝟙) ≡ 𝟙 : 𝒰
-ttheorem subst_b''' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙)) ≡ ⋆ : 𝟙
-ttheorem subst_b'''' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) ≡ ⋆ : 𝟙
+--ttheorem subst_b''' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙)) ≡ ⋆ : 𝟙
+--ttheorem subst_b'''' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) ≡ ⋆ : 𝟙
+
+def π₁ : Tm n :=
+  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰) (v(3)) (v(1)) (v(0)))
+
+def π₁' :=
+  [atm|λ (A : 𝒰) . λ (B : Π (a : A ; 𝒰)) . λ (p : Σ (a : A ; B ◃ a)) . indS(p a b A B (λ (z : Σ (x : A ; B ◃ x)) . A) a p)]
+
+def PI₁' := [atm| Π (A : 𝒰 ; Π (B : (Π (x : A ; 𝒰)) ; Π (p : (Σ (x : A ; B ◃ x)) ; A)))]
+
+ttheorem pi1_type : ε ⊢ π₁' : PI₁'
+
+theorem proj_one_type' :
+    (ε ⊢ π₁ ∶ Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2)) :=
+  sorry
+
+
+#eval (v(0)⌈⋆⌉₀ : Tm 0)
+--#eval ([atm|λ x⌈⋆⌉₀] : Tm 0)
+
+def π₂ : Tm n :=
+  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰)
+    ((Πv(3);𝒰)⌈π₁◃v(3)◃(Πv(3);𝒰)◃v(0)⌉₀)
+    (v(0)) (v(0)))
+
+--def π₂' := [atm|λ (A : 𝒰) . λ (B : Π (a : A ; 𝒰)) . λ (p : Σ (a : A ; B ◃ a)) . indS(p a b A B (λ (z : Σ (x : A ; B ◃ x)) . B ◃ (indS(z x y A B (λ (w : Σ (u : A ; B ◃ u)) . A) x z))) b p)]
 
 instance : ToString (Except String (PLift α)) where
   toString e := match e with
@@ -55,3 +82,11 @@ instance : ToString (Except String (PLift α)) where
   (([atm| ⋆])⌊ₐ↑ₚidₚ⌋⌈ₐ[atm|⋆]⌉₀)
   ([atm| ((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆])
   ([atm| 𝟙])
+
+#check (ε ⊢ ⋆ ∶ 𝟙)
+
+example (h : Γ ⊢ (t⌈ₐa⌉₀).toTm ∶ T) :
+    (Γ ⊢ t.toTm⌈a.toTm⌉₀ ∶ T) := toTm_subst .. ▸ h
+
+theorem fun_ext' : ε ⬝ 𝒰 ⬝ 𝒰 ⬝ (Πv(1);v(1)) ⊢ λv(2);(v(1)◃v(0)) ≡ v(0) ∶ (Πv(2);v(2)) := by
+  sorry
