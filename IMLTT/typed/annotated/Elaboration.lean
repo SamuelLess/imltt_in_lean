@@ -301,8 +301,8 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     if cx.isEmpty then
       throwErrorAt a "Cannot perform zero substitution in empty context"
     let ⟨n, tE⟩ ← elabATm cx t
-    -- this is a non-enforced invariant for non-empty contexts except for weakenings/substitutions
     let ⟨na, aE⟩ ← elabATm (cx.drop 1) a
+    -- this is a non-enforced invariant for non-empty contexts except for weakenings/substitutions
     if h : n = na + 1 then
       let out := substitute_zero' aE (h ▸ tE)
       return ⟨na, out⟩

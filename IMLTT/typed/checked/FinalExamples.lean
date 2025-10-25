@@ -47,6 +47,14 @@ theorem univ_var_type' :
 theorem univ_var_type'' :
     IsType (Ctx.extend Ctx.empty .univ) (.var 0) := by aesop
 
+theorem univ_var_type_atm :
+    IsType (ACtx.extend Lean.Name.anonymous ACtx.empty .univ).toCtx (ATm.var 0).toTm := by
+  exact ((is_type 4 _ _ _).toOption.get (by native_decide)).down
+
+example : ε ⊢ 𝟙 ≡ 𝟙 type := IsEqualType.unit_form_eq IsCtx.empty
+example : ε ⊢ 𝟙 ≡ 𝟙 type :=
+  IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq IsCtx.empty
+
 ttheorem type_rfl : ε ⬝ (A : 𝒰) ⊢ A ≡ A type
 ttheorem elem_rlf : ε ⬝ (A : 𝒰) ⬝ (a : A) ⊢ a ≡ a : A
 
