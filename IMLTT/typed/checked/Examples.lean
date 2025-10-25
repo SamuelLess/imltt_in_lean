@@ -356,6 +356,8 @@ def c : Tm (n+2):= 𝓏
 
 set_option pp.proofs true
 
+def fuel : Nat := 1000
+
 instance : ToString (Except String (PLift α)) where
   toString e := match e with
     | .error s => s

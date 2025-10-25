@@ -6,11 +6,6 @@ import IMLTT.typed.annotated.Substitution
 import IMLTT.typed.proofs.admissable.Weakening
 import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
 
---set_option profiler true
---set_option profiler.threshold 100
-
-def fuel := 200 -- proof go brrr 🚗
-
 def is_ctx : ((k : Nat) → (Γsome : ACtx k) → (T : ATm k) →
     Except String (PLift (Γsome.toCtx ⊢ T.toTm type)))
     → (Γ : ACtx n) → Except String (PLift (Γ.toCtx ctx))

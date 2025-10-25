@@ -7,6 +7,8 @@ import Qq
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
+def fuel := 200 -- proof go brrr 🚗
+
 -- Γ ctx
 structure InstIsCtx (n : Nat) where
   Γ : Ctx n
