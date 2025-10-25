@@ -41,7 +41,6 @@ partial def elabWeak (n : Nat) :  TSyntax `weak → TermElabM ((m : Nat) × (Wea
     return ⟨n, idₚ⟩
   | `(weak| ↑ₚ $w:weak) => do
     let ⟨m, ρ⟩ ← elabWeak (n-1) w
-    logInfo m!"elabWeak: n={n}, m={m}"
     if h : n = n - 1 + 1 then
       return ⟨m + 1, h ▸ .lift ρ⟩
     else
@@ -123,7 +122,7 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
         let myterm : ATm 0 ← evalConstATm id'
         let n := cx.length
         return ⟨n, (Nat.zero_add n) ▸ (myterm.shift n)⟩
-      catch _ => throwErrorAt id "Unexpected identifier '{id'}', context: {cx.toStr}"
+      catch _ => throwErrorAt id "Unknown identifier `{id'}`, context: {cx.toStr}"
   | `(atm| ($t:atm)) => elabATm cx t
   -- types
   | `(atm| 𝟘) => return ⟨cx.length, .empty⟩
@@ -301,8 +300,8 @@ partial def elabATm (cx : ElabCtx): TSyntax `atm → TermElabM ((n : Nat) × ATm
     if cx.isEmpty then
       throwErrorAt a "Cannot perform zero substitution in empty context"
     let ⟨n, tE⟩ ← elabATm cx t
-    -- this is a non-enforced invariant for non-empty contexts except for weakenings/substitutions
     let ⟨na, aE⟩ ← elabATm (cx.drop 1) a
+    -- this is a non-enforced invariant for non-empty contexts except for weakenings/substitutions
     if h : n = na + 1 then
       let out := substitute_zero' aE (h ▸ tE)
       return ⟨na, out⟩

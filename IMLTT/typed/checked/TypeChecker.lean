@@ -21,34 +21,34 @@ set_option maxHeartbeats 800000
 mutual
   def is_type  (fuel : Nat)  (n : Nat)
        (Γ : ACtx n) (T : ATm n) : Except String (PLift (Γ.toCtx ⊢ T.toTm type)) :=
-    match fuel, n, Γ, T with
-    | 0, _, _, _ => .error "is_type: out of fuel"
-    | f+1, _, Γ, .empty => do
+    match fuel, Γ, T with
+    | 0, _, _ => .error "is_type: out of fuel"
+    | f+1, Γ, .empty => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsType.empty_form ctx_ok.down
-    | f+1, _, Γ, .unit => do
+    | f+1, Γ, .unit => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsType.unit_form ctx_ok.down
-    | f+1, _, Γ, .nat => do
+    | f+1, Γ, .nat => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsType.nat_form ctx_ok.down
-    | f+1, _, Γ, .univ => do
+    | f+1, Γ, .univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return .up <| IsType.univ_form ctx_ok.down
-    | f+1, _, Γ, .pi A B => do
+    | f+1, Γ, .pi A B => do
       let is_type_A ← is_type f _ Γ A
       let is_type_B ← is_type f _ (Γ ⬝a A) B
       return .up <| IsType.pi_form is_type_A.down is_type_B.down
-    | f+1, _, Γ, .sigma A B => do
+    | f+1, Γ, .sigma A B => do
       let is_type_A ← is_type f _ Γ A
       let is_type_B ← is_type f _ (Γ ⬝a A) B
       return .up <| IsType.sigma_form is_type_A.down is_type_B.down
-    | f+1, _, Γ, .iden A a a' => do
+    | f+1, Γ, .iden A a a' => do
       let is_type_A ← is_type f _ Γ A
       let has_type_a ← has_type f Γ a A
       let has_type_a' ← has_type f Γ a' A
       return .up <| IsType.iden_form is_type_A.down has_type_a.down has_type_a'.down
-    | f+1, _, Γ, A => do
+    | f+1, Γ, A => do
       let has_type_A ← has_type f Γ A .univ
       return .up <| IsType.univ_elim has_type_A.down
   termination_by structural fuel

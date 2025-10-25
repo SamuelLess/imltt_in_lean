@@ -1,492 +1,91 @@
-import IMLTT.typed.JudgmentsAndRules
-import IMLTT.untyped.AbstractSyntax
-import IMLTT.typed.proofs.admissable.Weakening
-import IMLTT.typed.proofs.boundary.BoundaryTypesTerms
-import IMLTT.typed.checked.Grammar
+import IMLTT.typed.checked.Elaboration
+import IMLTT.typed.checked.IntroCtx
 
-open Tm
+ttheorem star_unit : ε ⊢ ⋆ : 𝟙
+ttheorem star_unit_app : ε ⊢ (λ(x : 𝟙). ⋆) ◃ ⋆ : 𝟙
+theorem star_unit' : (Γ ctx) → (Γ ⊢ (λ𝟙;⋆) ◃ ⋆ ∶ 𝟙) := intro_ctx star_unit_app
 
--- Unit type and terms
-#check 𝟙
-#check ⋆
-#check indUnit (v(0)) (v(1)) (v(2))
+def my_id := [atm| λ (T : 𝒰). λ (x : T) . x]
 
--- Empty type
-#check 𝟘
-#check indEmpty (v(0)) (v(1))
+ttheorem app_my_id : ε ⬝ (T : 𝒰) ⬝ (x : T) ⊢ ((my_id ◃ T) ◃ x) : T
 
--- Pi types and lambda abstraction
-#check Π 𝟙; v(0)
-#check λ 𝟙; v(0)
-#check (λ 𝟙; v(0)) ◃ ⋆
+/-- error: Unknown identifier `my_typo`, context: my_type -/
+#guard_msgs in
+ttheorem own_type : ε ⬝ (my_type : 𝒰) ⊢ my_typo : 𝒰
 
--- Sigma types and pairs
-#check Σ 𝟙; v(0)
-#check ⋆ & ⋆
-#check indSigma (v(0)) (v(1)) (v(2)) (v(3)) (v(4))
+/-- error: Type error: has_type: expected lambda term at v(0) -/
+#guard_msgs in
+ttheorem tc_fail : ε ⬝ (f : 𝒩) ⊢ f ◃ ⋆ : 𝟙
 
--- Natural numbers
-#check 𝒩
-#check 𝓏
-#check 𝓈(𝓏)
-#check indNat (v(0)) (v(1)) (v(2)) (v(3))
+def myunit := [atm| 𝟙]
 
--- Identity types
-#check ⋆ ≃[𝟙] ⋆
-#check refl 𝟙 ⋆
-#check j (v(0)) (v(1)) (v(2)) (v(3)) (v(4)) (v(5))
+ttheorem wisunit : ε ⬝ (x : 𝟙) ⬝ (y : 𝒰) ⬝ (w : myunit) ⊢ w : 𝟙
 
--- Universe
-#check 𝒰
+ttheorem myid : ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ IdA ◃ a : A
 
--- Context examples
-#check ε ⬝ 𝟙 ⬝ v(0)
-#reduce ε ⬝ 𝟙 ⬝ 𝒩 ⬝ (v(0) ≃[𝒩] v(1))
-#reduce ε ⬝ (Π 𝟙; v(0)) ⬝ (λ 𝟙; v(0))
+def starp := [atm| (⋆ & ⋆):: 𝟙]
 
--- More complex examples
-#check λ (Σ 𝟙; v(0)); v(0) & v(1)
-#check indNat (Π 𝒩; v(0)) 𝓏 (λ 𝒩; λ v(0); 𝓈(v(1))) (𝓈(𝓈(𝓏)))
-#check j (v(0) ≃[v(1)] v(2)) (v(3)) (v(4)) (v(5)) (refl v(6) v(7)) (v(8))
+ttheorem starpair : ε ⊢ (⋆ & ⋆)::𝟙 : Σ(x : 𝟙; 𝟙)
 
+def ret_id := [atm| (λ(T : 𝒰). λ (x : T). x)]
 
--- First, define addition as a recursive function
-def add : Tm n :=
-  λ 𝒩; λ 𝒩; indNat (Π 𝒩; v(0))
-    (λ 𝒩; v(0))                     -- base case: 0 + m = m
-    (λ 𝒩; λ 𝒩; λ v(0); 𝓈(v(1)))     -- step case: (succ n) + m = succ (n + m)
-    (v(1))                           -- applied to first argumente
+ttheorem retid : ε ⬝ (T : 𝒰) ⬝ (x : T) ⊢ (ret_id ◃ T) ◃ x : T
 
-#check add ◃ 𝓏 ◃ (𝓈(𝓈(𝓏))) -- 0 + 2 = 2
-#reduce add ◃ 𝓏 ◃ (𝓈(𝓈(𝓏))) -- 0 + 2 = 2
+def natpair : ATm 0 := [atm|((λ (n:𝒩).
+    (𝓈(n) & (ret_id ◃ 𝒩) ◃ 𝓏) :: 𝒩) ◃ 𝓏)]
 
-def zero_add_two : Tm 0 :=
-  refl 𝒩 (add ◃ 𝓏 ◃ 𝓈(𝓈(𝓏)))  -- 0 + 2 ≃[𝒩] 2
+ttheorem usingnextterm : ε  ⊢ natpair : Σ(x : 𝒩;𝒩)
 
-def refl_zero : Tm 0 :=
-  refl 𝒩 zeroNat
+def type_id := [atm| Π(T : 𝒰;Π (x : T;T))]
 
-#check (Π 𝒩; (v(0) ≃[𝒩] (add◃v(0)◃𝓏)) : Tm 1)
+ttheorem emptyctx : ε ctx
 
-example: ε ctx := IsCtx.empty
+theorem bridge : IsCtx ε := emptyctx
 
-theorem unitcontextunit : ε ⬝ 𝟙 ⊢ v(0) ∶ 𝟙 := HasType.var (IsType.unit_form IsCtx.empty)
+ttheorem id_is_type : ε ⊢ type_id type
 
-example : ε ⬝ 𝒩 ⬝ 𝟙 ⊢ v(0) ∶ 𝟙 := HasType.var
-  (IsType.unit_form (IsCtx.extend IsCtx.empty (IsType.nat_form IsCtx.empty)))
+ttheorem typeid1 : ε ⊢ ret_id : type_id
+ttheorem typeid2 : ε ⊢ type_id ≡ Π(T : 𝒰;Π (x : T;T)) type
+ttheorem typeid3 : ε ⊢ ret_id ≡ ret_id : type_id
 
-/-
-| weak :
-  HasType Γ v(i) A → IsType Γ B
-  → HasType (Γ ⬝ B) v(i.succ) (A⌊↑ₚidₚ⌋) -- XXX: change (v(i)⌊↑ₚidₚ⌋) to v(i.succ)? -> yes
--/
+ttheorem univ_var_type : ε ⬝ (A : 𝒰) ⊢ A type
 
-example : ε ⬝ 𝒩 ⬝ 𝟙 ⊢ v(1) ∶ 𝒩 := by
-  let Γ := ε ⬝ 𝒩
-  have : Γ ctx := IsCtx.extend IsCtx.empty (IsType.nat_form IsCtx.empty)
-  have hΓ1 : Γ ⊢ 𝟙 type := IsType.unit_form this
-  have hwo : Γ ⊢ v(0) ∶ 𝒩 := HasType.var (IsType.nat_form IsCtx.empty)
-  exact HasType.weak hwo hΓ1
-
-example : ε ⬝ 𝟙 ⊢ (refl 𝟙 v(0)) ∶ v(0) ≃[𝟙] v(0) := by
-  let Γ := ε ⬝ 𝟙
-  have hΓctx : Γ ctx := IsCtx.extend IsCtx.empty (IsType.unit_form IsCtx.empty)
-  have hΓ1type : Γ ⊢ 𝟙 type := IsType.unit_form hΓctx
-  have : Γ ⊢ v(0) ∶ 𝟙 := HasType.var (IsType.unit_form IsCtx.empty)
-  exact HasType.iden_intro hΓ1type this
-
-def add' : Tm n :=
-  λ 𝒩; λ 𝒩; indNat (Π 𝒩; v(0))
-    (λ 𝒩; v(0))                     -- base case: 0 + m = m
-    (λ 𝒩; λ 𝒩; λ v(0); 𝓈(v(1)))     -- step case: (succ n) + m = succ (n + m)
-    (v(1))                           -- applied to first argument
-
-def add_zero : Tm n :=
-  λ 𝒩;  -- ∀n : ℕ (n = v(0) in this scope)
-  indNat (v(0) ≃[𝒩] (add ◃ v(0) ◃ 𝓏))  -- Motive P(n) = n + 0 = n
-    (refl 𝒩 𝓏)  -- Base case: 0 + 0 = 0
-    (λ 𝒩;  -- k = v(1), outer n = v(2)
-      λ (v(0) ≃[𝒩] v(1));  -- ih : k + 0 = k (v(0) is ih, v(1) is k)
-      j v(2)  -- A = 𝒩 (from outer scope)
-        (λ 𝒩; λ 𝒩; λ 𝒩; 𝓈(v(1)) ≃[𝒩] 𝓈(v(2)))  -- Motive C
-        (λ 𝒩; λ 𝒩; refl 𝒩 (𝓈(v(0))))  -- Refl case
-        v(0)  -- p : k + 0 = k (ih)
-        (add ◃ v(1) ◃ 𝓏)  -- x = k + 0
-        v(1)  -- y = k
-        --v(0)  -- p : k + 0 = k (ih again)
-    )
-    v(0)  -- Apply to input n (v(0) in outer scope)
-
-example : ε ⬝ 𝒩 ⊢
-  indNat (v(0) ≃[𝒩] (add ◃ v(0) ◃ 𝓏))  -- Motive P(n) = n + 0 = n
-    (refl 𝒩 𝓏)  -- Base case: 0 + 0 = 0
-    (λ 𝒩;  -- k = v(1), outer n = v(2)
-      λ (v(0) ≃[𝒩] v(1));  -- ih : k + 0 = k (v(0) is ih, v(1) is k)
-      j v(2)  -- A = 𝒩 (from outer scope)
-        (λ 𝒩; λ 𝒩; λ 𝒩; 𝓈(v(1)) ≃[𝒩] 𝓈(v(2)))  -- Motive C
-        (λ 𝒩; λ 𝒩; refl 𝒩 (𝓈(v(0))))  -- Refl case
-        v(0)  -- p : k + 0 = k (ih)
-        (add ◃ v(1) ◃ 𝓏)  -- x = k + 0
-        v(1)  -- y = k
-        --v(0)  -- p : k + 0 = k (ih again)
-    ) v(0)
-  ∶ (v(0) ≃[𝒩] (add◃v(0)◃𝓏))  := by
-  simp [add_zero]
-  sorry
-
-example (Γ : Ctx n) : (Γ ⊢ A type) -> (Γ ⬝ A ⊢ v(0) ∶ shift_tm A) := by
-  intro hAtype
+theorem univ_var_type' :
+    IsType (Ctx.extend Ctx.empty .univ) (.var 0) := by
+  apply IsType.univ_elim
   apply HasType.var
-  exact hAtype
-
-example (Γ : Ctx n) : ∀ a : Tm n, (Γ ⊢ a ∶ 𝒩) → (Γ ⬝ 𝒩 ⊢ (shift_tm a) ≃[𝒩] v(0) type) := by
-  intro a ha
-  apply IsType.iden_form
-  · apply IsType.nat_form
-    apply IsCtx.extend
-    exact boundary_ctx_term ha
-    apply IsType.nat_form (boundary_ctx_term ha)
-  · have hΓNtype := IsType.nat_form (boundary_ctx_term ha)
-    exact weakening_term ha hΓNtype
-  · apply HasType.var
-    apply IsType.nat_form
-    exact boundary_ctx_term ha
-
-example (Γ : Ctx n) : ∀ a : Tm n, (Γ ⊢ a ∶ A) → (Γ ⬝ A ⊢ a⌊↑ₚidₚ⌋ ≃[A⌊↑ₚidₚ⌋] v(0) type) := by
-  intro a ha
-  have hae : Γ ⬝ A ⊢ a⌊↑ₚidₚ⌋ ∶ A⌊↑ₚidₚ⌋ := by
-    apply weakening_term
-    exact ha
-    exact boundary_term_type ha
-  apply IsType.iden_form
-  · exact boundary_term_type hae
-  · exact hae
-  · apply HasType.var
-    exact boundary_term_type ha
-
-
-theorem idpi'' : (Γ ctx) -> Γ ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 := by
-  intro hΓctx
-  apply HasType.pi_intro
-  apply HasType.var
-  apply IsType.nat_form
-  exact hΓctx
-
-example : ε ⊢ Tm.app (Tm.lam 𝒩 𝓈(v(0))) 𝓏 ∶ 𝒩 := by
-  have : ε ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 := by sorry
-  apply HasType.pi_elim this
-  exact HasType.nat_zero_intro IsCtx.empty
-
-example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := fun hΓctx ↦
-  have h_pi := HasType.pi_intro (HasType.var (IsType.nat_form hΓctx));
-  HasType.pi_elim h_pi (HasType.nat_zero_intro hΓctx)
-
-example : (Γ ctx) -> Γ ⊢ (λ𝒩;v(0)) ◃ 𝓏 ∶ 𝒩 := by
-  intro hΓctx
-  have : Γ ⊢ λ𝒩;v(0) ∶ Π𝒩;𝒩 := by
-    apply HasType.pi_intro
-    apply HasType.var
-    apply IsType.nat_form
-    exact hΓctx
-  apply HasType.pi_elim this
-  exact HasType.nat_zero_intro hΓctx
-
-example : (Γ ctx) -> Γ ⬝ 𝒩 ⊢ (Tm.lam 𝒩 𝓈(v(0))) ◃ v(0) ∶ 𝒩 := by
-  intro hΓctx
-  have : Γ ⬝ 𝒩 ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 := by sorry
-  apply HasType.pi_elim this
-  apply HasType.var
-  apply IsType.nat_form
-  exact hΓctx
-
-example : weaken ρ (.lam A b) =
-    .lam (weaken ρ A) (weaken (lift_weak_n 1 ρ) b) := rfl
-
-def swap_args : (a -> b -> c) -> (b -> a -> c) := fun a_1 a_2 a ↦ a_1 a a_2
-
-def swap (F : Tm n) (A : Tm (n+1)) (B : Tm (n+1)) : Tm n := λF;λB;λ(A⌊↑ₚidₚ⌋);v(2)◃v(0)◃v(1)
-
-example {A : Tm n} {B : Tm n} (hAtype : Γ ⊢ A type) (hBtype : Γ ⊢ B type)
-    (hCtype : Γ ⬝ A ⬝ B⌊↑ₚidₚ⌋ ⊢ C type) :
-    Γ ⊢ swap (ΠA;(Π(B⌊↑ₚidₚ⌋);C)) (A⌊↑ₚidₚ⌋) (B⌊↑ₚidₚ⌋) ∶
-      Tm.pi (@Tm.pi n A (Tm.pi (B⌊↑ₚidₚ⌋) C)) (@Tm.pi (n+1) (B⌊↑ₚidₚ⌋) (Tm.pi (A⌊↑ₚidₚ⌋) C⌊↑ₚidₚ⌋)) := by
-  simp
-  rw [swap]
-  apply HasType.pi_intro
-  apply HasType.pi_intro
-  simp
-  apply HasType.pi_intro
-  sorry
-  --apply @HasType.pi_elim (n+3) ((Γ ⬝ ΠA;ΠB⌊↑ₚidₚ⌋;C) ⬝ B⌊↑ₚidₚ⌋ ⬝ A⌊↑ₚ↑ₚidₚ⌋) (v(2)◃v(0)) (v(1)) (C⌊⇑ₚ↑ₚ↑ₚidₚ⌋) (v(1))
-  --apply @HasType.pi_intro (n+2) ((Γ ⬝ ΠA;ΠB⌊↑ₚidₚ⌋;C) ⬝ B⌊↑ₚidₚ⌋) (A⌊↑ₚ↑ₚidₚ⌋) (v(2)◃v(0)◃v(1)) (C⌊⇑ₚ↑ₚidₚ⌋)
-  --apply @HasType.pi_intro (n+1) (Γ ⬝ ΠA;ΠB⌊↑ₚidₚ⌋;C) (A⌊↑ₚidₚ⌋) (λB⌊↑ₚ↑ₚidₚ⌋; v(2)◃v(1)◃v(0))
-
-@[simp]
-def shift : (n : Nat) -> Weak n 0
-  | 0 => Weak.id
-  | n + 1 => Weak.shift <| shift n
-
-example : Tm n :=
-  let t : Tm 0 := Tm.tt
-  (t⌊shift n⌋)
-
-theorem weaken_from_n : (↑₁n↬n) = ↑ₚidₚ := by
-  unfold weaken_from
-  split <;> simp
-
-theorem intro_ctx_type {n : Nat} (Γ : Ctx n) :
-    (Γ ctx) -> (ε ⊢ T type) → (Γ ⊢  T⌊shift n⌋ type) := by
-  intro hΓctx hεTtype
-  induction Γ with
-  | empty => simpa
-  | @extend n' Γ' A ih =>
-    have hΓ'ctx : Γ' ctx := ctx_decr hΓctx
-    have hΓ'Atype : Γ' ⊢ A type := ctx_extr hΓctx
-    have hsuccn : shift (n' + 1) = (↑ₚshift n') := rfl
-    rw [hsuccn, ←weakening_shift_id]
-    exact weakening_type (ih hΓ'ctx) hΓ'Atype
-
-theorem intro_ctx (Γ : Ctx n) :
-    (Γ ctx) -> (ε ⊢ t ∶ T) → (Γ ⊢ (t⌊shift n⌋) ∶ T⌊shift n⌋) := by
-  intro hΓctx htT
-  induction Γ with
-  | empty => simpa
-  | @extend n' Γ' A ih =>
-    have hΓ'ctx : Γ' ctx := ctx_decr hΓctx
-    have hΓ'Atype : Γ' ⊢ A type := ctx_extr hΓctx
-    have : shift (n' + 1) = (↑ₚshift n') := rfl
-    rw [this, ←weakening_shift_id]
-    rw (occs := [2]) [←weakening_shift_id]
-    exact weakening_term (ih hΓ'ctx) hΓ'Atype
-
-theorem var_as_type : (Γ ctx) → (Γ ⬝ U ⊢ v(0) type) → (Γ ⬝ U ⬝ v(0) ⊢ v(0) ∶ v(1)) := by
-  intro hΓctx hv0type
-  apply HasType.var
-  exact hv0type
-
-theorem var_univ_type : ε ⬝ 𝒰 ⊢ v(0) type := by
-  apply boundary_type_eq_type' (A := v(0))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.var_eq
   apply IsType.univ_form
   exact IsCtx.empty
 
-theorem var_type : ε ⬝ 𝒰 ⬝ v(0) ⊢ v(0) ∶ v(1) := by
-  apply HasType.var
-  apply boundary_type_eq_type' (A := v(0))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.var_eq
-  apply IsType.univ_form
-  exact IsCtx.empty
+theorem univ_var_type'' :
+    IsType (Ctx.extend Ctx.empty .univ) (.var 0) := by aesop
 
-theorem var_type_univ : ε ⬝ 𝒰  ⊢ v(0) type := by
-  apply boundary_type_eq_type' (A := v(0))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.var_eq
-  apply IsType.univ_form
-  exact IsCtx.empty
+theorem univ_var_type_atm :
+    IsType (ACtx.extend Lean.Name.anonymous ACtx.empty .univ).toCtx (ATm.var 0).toTm := by
+  exact ((is_type 4 _ _ _).toOption.get (by native_decide)).down
 
---#imltt ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ (IdA a) : A
-theorem var_type' : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1)◃v(0) ∶ v(2) := by
-  let Γ := ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)
-  have : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1) ∶ (Πv(0+2);v(1+2)) := by
-    --apply HasType.weak
-    apply HasType.weak (B:= v(1)) (Γ := ε ⬝ 𝒰 ⬝ (Πv(0);v(1))) (i := 0) (A := (Πv(1);v(2)))
-    · apply HasType.var (A := Πv(0);v(1))
-      refine IsType.pi_form ?_ ?_
-      · exact var_type_univ
-      · apply boundary_type_eq_type' (A := v(1))
-        apply IsEqualType.univ_elim_eq
-        apply IsEqualTerm.weak_eq (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-        · aesop
-        · exact var_type_univ
-    · apply boundary_type_eq_type' (A := v(1))
-      apply IsEqualType.univ_elim_eq
-      apply IsEqualTerm.weak_eq (B := Πv(0);v(1)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-      · aesop
-      · refine IsType.univ_elim ?_
-        apply HasType.univ_pi
-        · aesop
-        · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-          · aesop
-          · aesop
-  apply HasType.pi_elim this
-  apply HasType.var
-  apply boundary_type_eq_type' (A := v(1))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.weak_eq (i := 0) (B := Πv(0);v(1)) (Γ := ε ⬝ 𝒰) (A := 𝒰)
-  · aesop
-  · refine IsType.univ_elim ?_
-    apply HasType.univ_pi
-    · aesop
-    · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-      · aesop
-      · aesop
+example : ε ⊢ 𝟙 ≡ 𝟙 type := IsEqualType.unit_form_eq IsCtx.empty
+example : ε ⊢ 𝟙 ≡ 𝟙 type :=
+  IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq IsCtx.empty
 
--- redundancy of rules
-example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
-  IsEqualType.unit_form_eq hctx
-example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
-  IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq hctx
+ttheorem type_rfl : ε ⬝ (A : 𝒰) ⊢ A ≡ A type
+ttheorem elem_rlf : ε ⬝ (A : 𝒰) ⬝ (a : A) ⊢ a ≡ a : A
 
--- define in one context
--- Γ ⬝ 𝟙 ⊢ A type => Γ ⬝ 𝟙 ⬝ 𝒰 ⬝ v(0) ctx
-example : (ε ⬝ 𝟙 ⬝ 𝟙 ⬝ (((λ𝟙;𝒩)◃v(0))⌈⋆⌉₀) ⊢ indUnit ((λ𝟙;𝒩)◃v(0)) v(2) v(0) ∶ ((λ𝟙;𝒩)◃v(0))⌈v(2)⌉₀) := by
-  typecheck
+ttheorem fun_ext : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (f : A → B) ⊢ λ(a : A). (f ◃ a) : A → B
 
---Γ ⊢ ΣA;B type → (Γ ⊢ p ∶ ΣA;B) →  Γ ⊢ A.indSigma B (A⌊↑ₚidₚ⌋) (v(0)⌊↑ₚidₚ⌋) p  ∶ A :=
---example : (ε ⬝ 𝒰 ⊢ Σv(0);(Πv(1);𝒰) type) := by typecheck
+ttheorem subst_b : ε ⊢ ((λ (a : 𝟙). a))◃ ⋆ ≡ ⋆ : 𝟙
+ttheorem subst_b' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
+ttheorem subst_ : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
+ttheorem subst_b'' : ε ⊢ ((λ (A : 𝒰). A) ◃ 𝟙) ≡ 𝟙 : 𝒰
 
-#check HasType.sigma_elim
-#eval (((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉ : Tm 3)
+example (h : Γ ⊢ (t⌈ₐa⌉₀).toTm ∶ T) :
+    (Γ ⊢ t.toTm⌈a.toTm⌉₀ ∶ T) := toTm_subst .. ▸ h
 
-/-
-A := 𝟙
-B := ((λ𝟙;𝒩)◃v(0))
-p := (⋆, 𝓏)
-C := ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))
-c := (v(0), v(1))
--/
-def n := 0
-def A : Tm n := 𝟙
-def B : Tm (n+1) := ((λ𝟙;𝒩)◃v(0))
-def p : Tm n := (⋆&𝓏)
-def C : Tm (n+1) := ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))
-def c : Tm (n+2):= 𝓏
+ttheorem pi_type : ε ⬝ (s : 𝟙) ⊢ (λ(x : 𝟙). s) : 𝟙 → 𝟙
 
-set_option pp.proofs true
+ttheorem comp : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢
+  λ(g : B → C). λ(f : A → B). λ(x : A). g◃f◃x :
+    (B → C) → (A → B) → (A → C)
 
-def fuel : Nat := 1000
-
-instance : ToString (Except String (PLift α)) where
-  toString e := match e with
-    | .error s => s
-    | .ok _ => "success"
-
-#eval is_eq_type fuel (ε ⬝ A ⬝ B) 𝒩 (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
-
-#eval has_type fuel (ε ⬝ A ⬝ B) c (C⌈(ₛ↑ₚ↑ₚidₚ)⋄ v(1)&v(0)⌉)
-
---example : (ε ⬝ (ΣA;B) ⊢ C type) := by typecheck
-example : (ε ⬝ A ⬝ B) ⊢ c ∶ (C⌈(ₛ↑ₚ↑ₚidₚ) ⋄ v(1)&v(0)⌉) := by typecheck
-example : (ε ⬝ A ⬝ B) ⊢ c ∶ 𝒩 := by typecheck
-
-example : ε ⊢ A.indSigma B C c p ∶ C⌈p⌉₀ := by typecheck
-
-example : ε ⊢
-  𝟙.indSigma ((λ𝟙;𝒩)◃v(0)) ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0)) 𝓏 (⋆&𝓏)
-      ∶ ((λ(Σ𝟙;((λ𝟙;𝒩)◃v(0)));𝒩)◃v(0))⌈(⋆&𝓏)⌉₀ := by typecheck
-
---example : (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ (Σv(1);v(1)) ⊢ .indSigma v(2) v(1) (v(2+1)) v(0+1) v(0) ∶ v(3)) := by typecheck
-
--- OLD EXAMPLES
-
-
-#eval has_type fuel (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ Σv(1);v(1)) (v(2).indSigma v(1) v(2 + 1) v(0 + 1) v(0)) v(1)
-#eval is_ctx (is_type fuel) (ε ⬝ 𝒰 ⬝ 𝒰 ⬝ Σv(1);v(1))
-
-
-#eval is_eq_term fuel (ε ⬝ 𝟙) (v(0)⌈⋆⌉₀) (⋆)  𝟙
-
-#eval is_ctx (is_type fuel) (ε ⬝ 𝒰 ⬝ 𝟙 ⬝ (v(2)⌈⋆⌉₀))
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝟙 ⬝ 𝟙 ⬝ (λ𝟙; 𝒩)◃v(0)⌈⋆⌉₀) v(0) ((λ𝟙; 𝒩)◃v(0)⌈⋆⌉₀)
-
-
-/-- info: success -/
-#guard_msgs in
-#eval is_ctx (is_type fuel) (ε ⬝ 𝟙 ⬝ 𝒰 ⬝ 𝒩 ⬝ (v(2)⌈⋆⌉₀))
---(ε ⬝ 𝟙 ⬝ 𝒰 ⬝ 𝒩 ⬝ (v(3)⌈⋆⌉₀) ⊢ indUnit v(2) v(3) v(0) ∶ v(2)⌈v(3)⌉₀)
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel ((ε ⬝ 𝒰 ⬝ 𝒰 ⬝ 𝒰 ⬝ Πv(1);v(1)) ⬝ Πv(3);v(3))
-  ((λΠv(3);v(3); λΠv(5);v(5); λv(6); v(2)◃(v(1)◃v(0)))◃v(1)◃v(0)) (Πv(4);v(3))
-
-/-- info: success -/
-#guard_msgs in
-#eval (has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) v(1) 𝒩)
-/-- info: success -/
-#guard_msgs in
-#eval (has_type fuel (ε ⬝ 𝟘 ⬝ 𝒩 ⬝ 𝟙) v(2) 𝟘)
-/-- info: success -/
-#guard_msgs in
-#eval (has_type fuel ε ((λ𝒰; v(0))◃𝟙) 𝒰)
-/-- info: success -/
-#guard_msgs in
-#eval (is_eq_type fuel (ε ⬝ 𝟙) 𝟙 (𝟙⌊↑ₚidₚ⌋⌈v(0)⌉₀))
-
-theorem star_unit : ε ⊢ ⋆ ∶ 𝟙 := ((has_type fuel ε ⋆ 𝟙).toOption.get (by native_decide)).down
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)
-
-theorem idpi : ε ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 :=
-  ((has_type fuel ε (Tm.lam 𝒩 v(0)) (Tm.pi 𝒩 𝒩)).toOption.get (by native_decide)).down
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0)))◃v(1)) 𝒩
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&v(0))◃v(1)) (Σ𝒩;𝒩)
-
-def ret_id : Tm 3 := (λ𝒰;(λv(0);v(0)))
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((ret_id◃𝒩)◃v(0)))◃v(1)) (Σ𝒩;𝒩)
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) ((λ𝒩;𝓈(v(0))&((λ𝒰;((λv(0);v(0))))◃𝒩◃v(0)))◃v(1)) (Σ𝒩;𝒩)
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩 ⬝ 𝟙) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃v(1)) 𝒩
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩) ((λ𝒩;v(0))◃v(0)) 𝒩
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒰
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒩) ((λ(((λ𝒰;v(0)))◃𝒩);v(0))◃v(0)) 𝒩
-
-/-- info: success -/
-#guard_msgs in
-#eval is_eq_type fuel (ε ⬝ 𝒰) v(0) v(0)
-
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒰) (((λ𝒰;(λv(0);v(0)))◃𝒩)◃𝓏) 𝒩
-/-- info: success -/
-#guard_msgs in
-#eval has_type fuel (ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)) ((v(1) ◃ v(0))) v(2)
-
-def π₁ : Tm n :=
-  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰) (v(3)) (v(1)) (v(0)))
-
-def π₂ : Tm n :=
-  λ𝒰; λ(Πv(0);𝒰); λ(Σv(1);(Πv(2);𝒰)); (.indSigma v(2) (Πv(3);𝒰)
-    ((Πv(3);𝒰)⌈π₁◃v(3)◃(Πv(3);𝒰)◃v(0)⌉₀)
-    (v(0)) (v(0)))
-
-#eval has_type fuel ε π₁ (Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2))
-
-/-example : (ε ⊢ π₁ ∶ Π𝒰; Π(Πv(0);𝒰); Π(Σv(1);(Πv(2);𝒰)); v(2)) :=
-  ((has_type fuel _ _ _).toOption.get (by native_decide)).down-/
-
-
-/-- info: success -/
-#guard_msgs in
-#eval is_eq_type fuel (ε ⬝ 𝒩) (((λ𝒰;v(0)))◃𝒩) 𝒩
-
-example : ε ⊢ (Tm.lam 𝒩 𝓈(v(0))) ∶ Tm.pi 𝒩 𝒩 :=
-  ((has_type fuel ε (Tm.lam 𝒩 𝓈(v(0))) (Tm.pi 𝒩 𝒩)).toOption.get (by native_decide)).down
+ttheorem comp_applied : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⬝ (g' : B → C) ⬝ (f' : A → B) ⊢
+    ((λ(g : B → C) . (λ(f : A → B) . (λ(x : A) . g ◃ (f ◃ x)))) ◃ g')  ◃ f' : A → C
