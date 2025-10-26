@@ -19,7 +19,7 @@ notation Γ "⬝a" A => ACtx.extend Lean.Name.anonymous Γ A
 
 set_option maxHeartbeats 800000
 mutual
-  def is_type  (fuel : Nat)  (n : Nat)
+  def is_type  (fuel : Nat) (n : Nat)
        (Γ : ACtx n) (T : ATm n) : Except String (PLift (Γ.toCtx ⊢ T.toTm type)) :=
     match fuel, Γ, T with
     | 0, _, _ => .error "is_type: out of fuel"
@@ -271,7 +271,23 @@ mutual
       return .up <| IsEqualType.type_symm is_eq_symm.down
   termination_by structural fuel
 
-  def is_eq_term (fuel: Nat) (Γ : ACtx n) (a : ATm n) (a' : ATm n) (A : ATm n) :
+  def is_eq_term (fuel : Nat) (Γ : ACtx n) (a : ATm n) (a' : ATm n) (A : ATm n) :
+      Except String (PLift (Γ.toCtx ⊢ a.toTm ≡ a'.toTm ∶ A.toTm)) := do
+    match fuel with
+      | 0 => .error s!"is_eq_term: out of fuel for normalization"
+      | f+1 => do
+        let ⟨a_norm, h_a_norm⟩ ← normalize f Γ a A
+        let ⟨a'_norm, h_a'_norm⟩  ← normalize f Γ a' A
+        let res ← is_eq_term' f Γ a_norm a'_norm A
+        have : Γ.toCtx ⊢ a.toTm ≡ a'.toTm ∶ A.toTm := by
+          apply IsEqualTerm.term_trans h_a_norm
+          apply IsEqualTerm.term_symm
+          apply IsEqualTerm.term_trans h_a'_norm
+          exact IsEqualTerm.term_symm res.down
+        return .up this
+  termination_by structural fuel
+
+  def is_eq_term' (fuel : Nat) (Γ : ACtx n) (a : ATm n) (a' : ATm n) (A : ATm n) :
       Except String (PLift (Γ.toCtx ⊢ a.toTm ≡ a'.toTm ∶ A.toTm)) :=
     match fuel, Γ, a, a', A with
     | 0, Γ, a, a', A =>
@@ -720,5 +736,76 @@ mutual
             exact h)
           has_type_a₁.down has_type_a₂.down has_type_p.down⟩
     | _+1, _, t => .error s!"infer_type: unsupported pattern {t.toTm}"
+  termination_by structural fuel
+
+  def normalize (fuel : Nat) (Γ : ACtx n) (t : ATm n) (T : ATm n) :
+      Except String (Σ' t' : ATm n, Γ.toCtx ⊢ t.toTm ≡ t'.toTm ∶ T.toTm) := do
+    match fuel, Γ, t with
+    | 0, _, _ => .error "normalize: out of fuel"
+    | f+1, Γ, .tt => do
+      let has_type_T ← has_type f Γ .tt T
+      return ⟨.tt, defeq_refl_term has_type_T.down⟩
+    | f+1, Γ, .zeroNat => do
+      let has_type_T ← has_type f Γ .zeroNat T
+      return ⟨.zeroNat, defeq_refl_term has_type_T.down⟩
+    -- TODO: ...
+    | f+1, Γ, .app func a => do
+      let ⟨.pi A B, hP⟩ ← infer_type f Γ func
+        | .error s!"normalize: could not infer type of {t.toTm}"
+      --.error s!"break in normalize: {A} {B} {func} {a}"
+      let ⟨.lam A' t', func'_eq⟩ ← normalize f Γ func (.pi A B) -- FIXME:
+        | .error s!"normalize: could not normalize function part of {t.toTm}"
+      let ⟨a', a'_eq⟩ ← normalize f Γ a A
+      --let has_type_app ← has_type f Γ (.app func a) (B⌈ₐa⌉₀)
+      let is_eq_type_T ← is_eq_type f Γ (B⌈ₐa'⌉₀) T
+      let is_eq_B_a_B_a' ← is_eq_type f Γ (B⌈ₐa⌉₀) (B⌈ₐa'⌉₀)
+      have func_norm :
+          Γ.toCtx ⊢ (func.app a).toTm ≡ (A'.lam t').toTm.app a'.toTm ∶ (B.toTm⌈a'.toTm⌉₀) := by
+        apply IsEqualTerm.ty_conv_eq
+          (A:= (B.toTm⌈a.toTm⌉₀))
+          (B:= (B.toTm⌈a'.toTm⌉₀))
+        · simp_all only [substitute_zero]
+          apply IsEqualTerm.pi_elim_eq
+          · exact func'_eq
+          · exact a'_eq
+        · exact (toTm_subst ..) ▸ (toTm_subst ..) ▸ is_eq_B_a_B_a'.down
+      have : Γ.toCtx ⊢ (func.app a).toTm ≡ t'⌈ₐa'⌉₀.toTm ∶ T.toTm := by
+        apply IsEqualTerm.ty_conv_eq
+          (A:= (B.toTm⌈a'.toTm⌉₀))
+          (B:= T.toTm)
+        · apply IsEqualTerm.term_trans func_norm
+          rw [ATm.toTm]
+          rw [toTm_subst]
+          · apply IsEqualTerm.pi_comp
+              (A:=A'.toTm)
+              (B:=B.toTm)
+              (a:=a'.toTm)
+              (b:=t'.toTm)
+            · exact (← has_type f (Γ ⬝a A') t' B).down
+            · exact (← has_type f Γ a' A').down
+        · exact (toTm_subst ..) ▸ is_eq_type_T.down
+      return ⟨t'⌈ₐa'⌉₀, this⟩
+    | f+1, Γ, .lam A b => do
+      let ⟨.pi A_alt B, hP⟩ ← infer_type f Γ (.lam A b)
+        | .error s!"normalize: could not infer type of {t.toTm}"
+      let has_type ← has_type f Γ (.lam A b) (.pi A B)
+      let is_eq_type_T ← is_eq_type f Γ (.pi A B) T
+      let ⟨A', A'_eq⟩ ← normalize f Γ A .univ
+      let ⟨b', b'_eq⟩ ← normalize f (Γ ⬝a A) b B
+      have : Γ.toCtx ⊢ (A.lam b).toTm ≡ (A'.lam b').toTm ∶ T.toTm := by
+        apply IsEqualTerm.ty_conv_eq
+          (A:= (.pi A.toTm B.toTm))
+          (B:= T.toTm)
+        apply IsEqualTerm.pi_intro_eq
+          (A:=A.toTm)
+          (B:=B.toTm)
+        · exact b'_eq
+        · apply IsEqualType.univ_elim_eq
+          exact A'_eq
+        · exact is_eq_type_T.down
+      return ⟨.lam A' b', this⟩
+    | f+1, Γ, t => do
+      let has_type_T ← has_type f Γ t T
+      return ⟨t, defeq_refl_term has_type_T.down⟩
   termination_by structural fuel
 end
