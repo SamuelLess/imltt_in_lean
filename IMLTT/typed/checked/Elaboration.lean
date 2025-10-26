@@ -21,19 +21,19 @@ partial def elabIsCtx (stxcx : TSyntax `actx) :
   | Except.ok _ =>
     let ctxE : Q(ACtx $n) := Lean.toExpr actx
     match ← whnf q(is_ctx (is_type fuel) $ctxE) with
-    | mkApp _ pr =>
+    | .app _ pr =>
       let ttm := mkApp3 (mkConst ``InstIsCtx.mk)
         (mkNatLit n)
         (← mkAppM ``ACtx.toCtx #[ctxE])
         (← mkAppM ``PLift.down #[pr])
       return ttm
-    | _ => throwError "Could not find proof again o.O"
+    | _ => unreachable!
   | Except.error msg =>
-    throwErrorAt stxcx "Type error: { msg }"
+    throwErrorAt stxcx "Type error: {msg}"
 
 elab "[tcx|" cx:actx"]" : term => elabIsCtx cx
 example : [tcx| ε] = ⟨ε, by constructor⟩ := rfl
-def test_tcx := [tcx| ε ⬝ (n : 𝒩)]
+def test_tcx := [tcx| ε ⬝ (b : 𝒩)]
 
 -- Γ ⊢ A type
 structure InstIsType (n : Nat) where
@@ -52,16 +52,16 @@ partial def elabIsType (stxcx : TSyntax `actx) (stxT : TSyntax `atm) :
       let ctxE : Q(ACtx $n) := Lean.toExpr actx
       let TE : Q(ATm $n) := Lean.toExpr T
       match ← whnf q(is_type fuel _ $ctxE $TE) with
-      | mkApp _ pr =>
+      | .app _ pr =>
         let ttm := mkApp4 (mkConst ``InstIsType.mk)
           (mkNatLit n)
           (← mkAppM ``ACtx.toCtx #[ctxE])
           (← mkAppM ``ATm.toTm #[TE])
           (← mkAppM ``PLift.down #[pr])
         return ttm
-      | _ => throwError "Could not find proof again o.O"
+      | _ => unreachable!
     | Except.error msg =>
-      throwErrorAt stxT "Type error: { msg }"
+      throwErrorAt stxT "Type error: {msg}"
   else throwErrorAt stxT m!"Context length mismatch: expected {n}, got {nT}"
 
 elab "[tit|" cx:actx "⊢" T:atm "type" "]" : term => elabIsType cx T
@@ -89,18 +89,18 @@ partial def elabHasType (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) :
       let tE : Q(ATm $n) := Lean.toExpr t
       let TE : Q(ATm $n) := Lean.toExpr T
       match ← whnf q(has_type fuel $ctxE $tE $TE) with
-      | mkApp _ pr =>
-        let ttm := mkApp5 (mkConst ``InstHasType.mk)
+      | .app _ pr =>
+        return mkApp5 (mkConst ``InstHasType.mk)
           (mkNatLit n)
           (← mkAppM ``ACtx.toCtx #[ctxE])
           (← mkAppM ``ATm.toTm #[tE])
           (← mkAppM ``ATm.toTm #[TE])
           (← mkAppM ``PLift.down #[pr])
-        return ttm
-      | _ => throwError "Could not find proof again o.O"
+      | _ => unreachable!
     | Except.error msg =>
-      throwErrorAt stxt "Type error: { msg }"
-  else throwErrorAt stxt m!"Context length mismatch: expected {n}, got {nt} and {nT}"
+      throwErrorAt stxt "Type error: {msg}"
+  else throwErrorAt stxt
+    m!"Context length mismatch: expected {n} (context), got {nt} (term) and {nT} (type)"
 
 elab "[tht|" cx:actx "⊢" t:atm ":" T:atm "]" : term => elabHasType cx t T
 
@@ -131,7 +131,7 @@ partial def elabIsEqualType (stxcx : TSyntax `actx) (stxT stxT' : TSyntax `atm) 
       let TE : Q(ATm $n) := Lean.toExpr T
       let TE' : Q(ATm $n) := Lean.toExpr T'
       match ← whnf q(is_eq_type fuel $ctxE $TE $TE') with
-      | mkApp _ pr =>
+      | .app _ pr =>
         let ttm := mkApp5 (mkConst ``InstIsEqualType.mk)
           (mkNatLit n)
           (← mkAppM ``ACtx.toCtx #[ctxE])
@@ -139,9 +139,9 @@ partial def elabIsEqualType (stxcx : TSyntax `actx) (stxT stxT' : TSyntax `atm) 
           (← mkAppM ``ATm.toTm #[TE'])
           (← mkAppM ``PLift.down #[pr])
         return ttm
-      | _ => throwError "Could not find proof again o.O"
+      | _ => unreachable!
     | Except.error msg =>
-      throwErrorAt stxT "Type error: { msg }"
+      throwErrorAt stxT "Type error: {msg}"
   else throwErrorAt stxT m!"Context length mismatch: expected {n}, got {nT} and {nT'}"
 
 elab "[tieT|" cx:actx "⊢" T:atm "≡" T':atm "type" "]" : term => elabIsEqualType cx T T'
@@ -173,7 +173,7 @@ partial def elabIsEqualTerm (stxcx : TSyntax `actx) (stxt stxt' stxT : TSyntax `
       let tE' : Q(ATm $n) := Lean.toExpr t'
       let TE : Q(ATm $n) := Lean.toExpr T
       match ← whnf q(is_eq_term fuel $ctxE $tE $tE' $TE) with
-      | mkApp _ pr =>
+      | .app _ pr =>
         let ttm := mkApp6 (mkConst ``InstIsEqualTerm.mk)
           (mkNatLit n)
           (← mkAppM ``ACtx.toCtx #[ctxE])
@@ -182,52 +182,42 @@ partial def elabIsEqualTerm (stxcx : TSyntax `actx) (stxt stxt' stxT : TSyntax `
           (← mkAppM ``ATm.toTm #[TE])
           (← mkAppM ``PLift.down #[pr])
         return ttm
-      | _ => throwError "Could not find proof again o.O"
+      | _ => unreachable!
     | Except.error msg =>
-      throwErrorAt stxT "Type error: { msg }"
+      throwErrorAt stxT "Type error: {msg}"
   else throwErrorAt stxcx m!"Context length mismatch: expected {n}, got {nt}, {nt'}, and {nT}"
 
 elab "[tiet|" cx:actx "⊢" t:atm "≡" t':atm ":" T:atm "]" : term => elabIsEqualTerm cx t t' T
 def test_tiet := [tiet| ε ⊢ ⋆ ≡ ⋆ : 𝟙]
 def test_tiet' := [tiet| ε ⬝ (n : 𝒩) ⊢ n ≡ n : 𝒩]
 
-syntax "ttheorem " ident " : " actx "ctx" : command
-macro_rules
-  | `(ttheorem $id:ident : $cx:actx ctx) => do
-    let var_ident := mkIdent <| Name.str id.getId "_InstIsCtx"
-    `(def $var_ident:ident := [tcx| $cx]
-      #guard_msgs(drop error) in
-      theorem $id : ($var_ident).Γ ctx := ($var_ident).isCtx)
+macro "ttheorem " id:ident " : " cx:actx "ctx" : command => do
+  let var_ident := mkIdent <| Name.str id.getId "_InstIsCtx"
+  `(def $var_ident:ident := [tcx| $cx]
+    #guard_msgs(drop error) in
+    theorem $id : ($var_ident).Γ ctx := ($var_ident).isCtx)
 
-syntax "ttheorem " ident " : " actx "⊢" atm "type" : command
-macro_rules
-  | `(ttheorem $id:ident : $cx:actx ⊢ $T:atm type) => do
-    let var_ident := mkIdent <| Name.str id.getId "_InstIsType"
-    `(def $var_ident:ident := [tit| $cx ⊢ $T type]
-      #guard_msgs(drop error) in
-      theorem $id : ($var_ident).Γ ⊢ ($var_ident).T type := ($var_ident).isType)
+macro "ttheorem " id:ident " : " cx:actx "⊢" T:atm "type" : command => do
+  let var_ident := mkIdent <| Name.str id.getId "_InstIsType"
+  `(def $var_ident:ident := [tit| $cx ⊢ $T type]
+    #guard_msgs(drop error) in
+    theorem $id : ($var_ident).Γ ⊢ ($var_ident).T type := ($var_ident).isType)
 
-syntax "ttheorem " ident " : " actx "⊢" atm ":" atm : command
-macro_rules
-  | `(ttheorem $id:ident : $cx:actx ⊢ $t:atm : $T:atm) => do
-    let var_ident := mkIdent <| Name.str id.getId "_InstHasType"
-    `(def $var_ident:ident := [tht| $cx ⊢ $t : $T]
-      #guard_msgs(drop error) in
-      theorem $id : ($var_ident).Γ ⊢ ($var_ident).t ∶ ($var_ident).T := ($var_ident).hasType)
+macro "ttheorem " id:ident " : " cx:actx "⊢" t:atm ":" T:atm : command => do
+  let var_ident := mkIdent <| Name.str id.getId "_InstHasType"
+  `(def $var_ident:ident := [tht| $cx ⊢ $t : $T]
+    #guard_msgs(drop error) in
+    theorem $id : ($var_ident).Γ ⊢ ($var_ident).t ∶ ($var_ident).T := ($var_ident).hasType)
 
-syntax "ttheorem " ident " : " actx "⊢" atm "≡" atm "type" : command
-macro_rules
-  | `(ttheorem $id:ident : $cx:actx ⊢ $T:atm ≡ $T':atm type) => do
-    let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualType"
-    `(def $var_ident:ident := [tieT| $cx ⊢ $T ≡ $T' type]
-      #guard_msgs(drop error) in
-      theorem $id : ($var_ident).Γ ⊢ ($var_ident).T ≡ ($var_ident).T' type := ($var_ident).isEqualType)
+macro "ttheorem " id:ident " : " cx:actx "⊢" T:atm "≡" T':atm "type" : command => do
+  let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualType"
+  `(def $var_ident:ident := [tieT| $cx ⊢ $T ≡ $T' type]
+    #guard_msgs(drop error) in
+    theorem $id : ($var_ident).Γ ⊢ ($var_ident).T ≡ ($var_ident).T' type := ($var_ident).isEqualType)
 
-syntax "ttheorem " ident " : " actx "⊢" atm "≡" atm ":" atm : command
-macro_rules
-  | `(ttheorem $id:ident : $cx:actx ⊢ $t:atm ≡ $t':atm : $T:atm) => do
-    let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualTerm"
-    `(def $var_ident:ident := [tiet| $cx ⊢ $t ≡ $t' : $T]
-      #guard_msgs(drop error) in
-      theorem $id : ($var_ident).Γ ⊢
-        ($var_ident).t ≡ ($var_ident).t' ∶ ($var_ident).T := ($var_ident).isEqualTerm)
+macro "ttheorem " id:ident " : " cx:actx "⊢" t:atm "≡" t':atm ":" T:atm : command => do
+  let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualTerm"
+  `(def $var_ident:ident := [tiet| $cx ⊢ $t ≡ $t' : $T]
+    #guard_msgs(drop error) in
+    theorem $id : ($var_ident).Γ ⊢
+      ($var_ident).t ≡ ($var_ident).t' ∶ ($var_ident).T := ($var_ident).isEqualTerm)
