@@ -1,184 +1,91 @@
 import IMLTT.typed.checked.Elaboration
+import IMLTT.typed.checked.IntroCtx
 
-theorem unitcontextunit : ε ⬝ 𝟙 ⊢ v(0) ∶ 𝟙 := HasType.var (IsType.unit_form IsCtx.empty)
+ttheorem star_unit : ε ⊢ ⋆ : 𝟙
+ttheorem star_unit_app : ε ⊢ (λ(x : 𝟙). ⋆) ◃ ⋆ : 𝟙
+theorem star_unit' : (Γ ctx) → (Γ ⊢ (λ𝟙;⋆) ◃ ⋆ ∶ 𝟙) := intro_ctx star_unit_app
 
-example : ε ⬝ 𝒩 ⬝ 𝟙 ⊢ v(0) ∶ 𝟙 := HasType.var
-  (IsType.unit_form (IsCtx.extend IsCtx.empty (IsType.nat_form IsCtx.empty)))
+def my_id := [atm| λ (T : 𝒰). λ (x : T) . x]
 
+ttheorem app_my_id : ε ⬝ (T : 𝒰) ⬝ (x : T) ⊢ ((my_id ◃ T) ◃ x) : T
 
-example : ε ⬝ 𝒩 ⬝ 𝟙 ⊢ v(1) ∶ 𝒩 := by
-  let Γ := ε ⬝ 𝒩
-  have : Γ ctx := IsCtx.extend IsCtx.empty (IsType.nat_form IsCtx.empty)
-  have hΓ1 : Γ ⊢ 𝟙 type := IsType.unit_form this
-  have hwo : Γ ⊢ v(0) ∶ 𝒩 := HasType.var (IsType.nat_form IsCtx.empty)
-  exact HasType.weak hwo hΓ1
+/-- error: Unknown identifier `my_typo`, context: my_type -/
+#guard_msgs in
+ttheorem own_type : ε ⬝ (my_type : 𝒰) ⊢ my_typo : 𝒰
 
-example : ε ⬝ 𝟙 ⊢ (.refl 𝟙 v(0)) ∶ v(0) ≃[𝟙] v(0) := by
-  let Γ := ε ⬝ 𝟙
-  have hΓctx : Γ ctx := IsCtx.extend IsCtx.empty (IsType.unit_form IsCtx.empty)
-  have hΓ1type : Γ ⊢ 𝟙 type := IsType.unit_form hΓctx
-  have : Γ ⊢ v(0) ∶ 𝟙 := HasType.var (IsType.unit_form IsCtx.empty)
-  exact HasType.iden_intro hΓ1type this
+/-- error: Type error: has_type: expected lambda term at v(0) -/
+#guard_msgs in
+ttheorem tc_fail : ε ⬝ (f : 𝒩) ⊢ f ◃ ⋆ : 𝟙
 
-example (Γ : Ctx n) : (Γ ⊢ A type) -> (Γ ⬝ A ⊢ v(0) ∶ shift_tm A) := by
-  intro hAtype
+def myunit := [atm| 𝟙]
+
+ttheorem wisunit : ε ⬝ (x : 𝟙) ⬝ (y : 𝒰) ⬝ (w : myunit) ⊢ w : 𝟙
+
+ttheorem myid : ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ IdA ◃ a : A
+
+def starp := [atm| (⋆ & ⋆):: 𝟙]
+
+ttheorem starpair : ε ⊢ (⋆ & ⋆)::𝟙 : Σ(x : 𝟙; 𝟙)
+
+def ret_id := [atm| (λ(T : 𝒰). λ (x : T). x)]
+
+ttheorem retid : ε ⬝ (T : 𝒰) ⬝ (x : T) ⊢ (ret_id ◃ T) ◃ x : T
+
+def natpair : ATm 0 := [atm|((λ (n:𝒩).
+    (𝓈(n) & (ret_id ◃ 𝒩) ◃ 𝓏) :: 𝒩) ◃ 𝓏)]
+
+ttheorem usingnextterm : ε  ⊢ natpair : Σ(x : 𝒩;𝒩)
+
+def type_id := [atm| Π(T : 𝒰;Π (x : T;T))]
+
+ttheorem emptyctx : ε ctx
+
+theorem bridge : IsCtx ε := emptyctx
+
+ttheorem id_is_type : ε ⊢ type_id type
+
+ttheorem typeid1 : ε ⊢ ret_id : type_id
+ttheorem typeid2 : ε ⊢ type_id ≡ Π(T : 𝒰;Π (x : T;T)) type
+ttheorem typeid3 : ε ⊢ ret_id ≡ ret_id : type_id
+
+ttheorem univ_var_type : ε ⬝ (A : 𝒰) ⊢ A type
+
+theorem univ_var_type' :
+    IsType (Ctx.extend Ctx.empty .univ) (.var 0) := by
+  apply IsType.univ_elim
   apply HasType.var
-  exact hAtype
-
-example (Γ : Ctx n) : ∀ a : Tm n, (Γ ⊢ a ∶ 𝒩) → (Γ ⬝ 𝒩 ⊢ (shift_tm a) ≃[𝒩] v(0) type) := by
-  intro a ha
-  apply IsType.iden_form
-  · apply IsType.nat_form
-    apply IsCtx.extend
-    exact boundary_ctx_term ha
-    apply IsType.nat_form (boundary_ctx_term ha)
-  · have hΓNtype := IsType.nat_form (boundary_ctx_term ha)
-    exact weakening_term ha hΓNtype
-  · apply HasType.var
-    apply IsType.nat_form
-    exact boundary_ctx_term ha
-
-example (Γ : Ctx n) : ∀ a : Tm n, (Γ ⊢ a ∶ A) → (Γ ⬝ A ⊢ a⌊↑ₚidₚ⌋ ≃[A⌊↑ₚidₚ⌋] v(0) type) := by
-  intro a ha
-  have hae : Γ ⬝ A ⊢ a⌊↑ₚidₚ⌋ ∶ A⌊↑ₚidₚ⌋ := by
-    apply weakening_term
-    exact ha
-    exact boundary_term_type ha
-  apply IsType.iden_form
-  · exact boundary_term_type hae
-  · exact hae
-  · apply HasType.var
-    exact boundary_term_type ha
-
-
-theorem idpi'' : (Γ ctx) -> Γ ⊢ Tm.lam 𝒩 v(0) ∶ Tm.pi 𝒩 𝒩 := by
-  intro hΓctx
-  apply HasType.pi_intro
-  apply HasType.var
-  apply IsType.nat_form
-  exact hΓctx
-
-example : (Γ ctx) -> Γ ⊢ Tm.app (Tm.lam 𝒩 v(0)) 𝓏 ∶ 𝒩 := fun hΓctx ↦
-  have h_pi := HasType.pi_intro (HasType.var (IsType.nat_form hΓctx));
-  HasType.pi_elim h_pi (HasType.nat_zero_intro hΓctx)
-
-example : (Γ ctx) -> Γ ⊢ (λ𝒩;v(0)) ◃ 𝓏 ∶ 𝒩 := by
-  intro hΓctx
-  have : Γ ⊢ λ𝒩;v(0) ∶ Π𝒩;𝒩 := by
-    apply HasType.pi_intro
-    apply HasType.var
-    apply IsType.nat_form
-    exact hΓctx
-  apply HasType.pi_elim this
-  exact HasType.nat_zero_intro hΓctx
-
-example : weaken ρ (.lam A b) =
-    .lam (weaken ρ A) (weaken (lift_weak_n 1 ρ) b) := rfl
-
-@[simp]
-def shift : (n : Nat) -> Weak n 0
-  | 0 => Weak.id
-  | n + 1 => Weak.shift <| shift n
-
-example : Tm n :=
-  let t : Tm 0 := Tm.tt
-  (t⌊shift n⌋)
-
-theorem weaken_from_n : (↑₁n↬n) = ↑ₚidₚ := by
-  unfold weaken_from
-  split <;> simp
-
-theorem intro_ctx_type {n : Nat} (Γ : Ctx n) :
-    (Γ ctx) -> (ε ⊢ T type) → (Γ ⊢  T⌊shift n⌋ type) := by
-  intro hΓctx hεTtype
-  induction Γ with
-  | empty => simpa
-  | @extend n' Γ' A ih =>
-    have hΓ'ctx : Γ' ctx := ctx_decr hΓctx
-    have hΓ'Atype : Γ' ⊢ A type := ctx_extr hΓctx
-    have hsuccn : shift (n' + 1) = (↑ₚshift n') := rfl
-    rw [hsuccn, ←weakening_shift_id]
-    exact weakening_type (ih hΓ'ctx) hΓ'Atype
-
-theorem intro_ctx (Γ : Ctx n) :
-    (Γ ctx) -> (ε ⊢ t ∶ T) → (Γ ⊢ (t⌊shift n⌋) ∶ T⌊shift n⌋) := by
-  intro hΓctx htT
-  induction Γ with
-  | empty => simpa
-  | @extend n' Γ' A ih =>
-    have hΓ'ctx : Γ' ctx := ctx_decr hΓctx
-    have hΓ'Atype : Γ' ⊢ A type := ctx_extr hΓctx
-    have : shift (n' + 1) = (↑ₚshift n') := rfl
-    rw [this, ←weakening_shift_id]
-    rw (occs := [2]) [←weakening_shift_id]
-    exact weakening_term (ih hΓ'ctx) hΓ'Atype
-
-theorem var_as_type : (Γ ctx) → (Γ ⬝ U ⊢ v(0) type) → (Γ ⬝ U ⬝ v(0) ⊢ v(0) ∶ v(1)) := by
-  intro hΓctx hv0type
-  apply HasType.var
-  exact hv0type
-
-theorem var_univ_type : ε ⬝ 𝒰 ⊢ v(0) type := by
-  apply boundary_type_eq_type' (A := v(0))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.var_eq
   apply IsType.univ_form
   exact IsCtx.empty
 
-theorem var_type : ε ⬝ 𝒰 ⬝ v(0) ⊢ v(0) ∶ v(1) := by
-  apply HasType.var
-  apply boundary_type_eq_type' (A := v(0))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.var_eq
-  apply IsType.univ_form
-  exact IsCtx.empty
+theorem univ_var_type'' :
+    IsType (Ctx.extend Ctx.empty .univ) (.var 0) := by aesop
 
-theorem var_type_univ : ε ⬝ 𝒰  ⊢ v(0) type := by
-  apply boundary_type_eq_type' (A := v(0))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.var_eq
-  apply IsType.univ_form
-  exact IsCtx.empty
+theorem univ_var_type_atm :
+    IsType (ACtx.extend Lean.Name.anonymous ACtx.empty .univ).toCtx (ATm.var 0).toTm := by
+  exact ((is_type 4 _ _ _).toOption.get (by native_decide)).down
 
---#imltt ε ⬝ (A : 𝒰) ⬝ (IdA : Π(a : A; A)) ⬝ (a : A) ⊢ (IdA a) : A
-theorem var_type' : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1)◃v(0) ∶ v(2) := by
-  let Γ := ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1)
-  have : ε ⬝ 𝒰 ⬝ (Πv(0);v(1)) ⬝ v(1) ⊢ v(1) ∶ (Πv(0+2);v(1+2)) := by
-    --apply HasType.weak
-    apply HasType.weak (B:= v(1)) (Γ := ε ⬝ 𝒰 ⬝ (Πv(0);v(1))) (i := 0) (A := (Πv(1);v(2)))
-    · apply HasType.var (A := Πv(0);v(1))
-      refine IsType.pi_form ?_ ?_
-      · exact var_type_univ
-      · apply boundary_type_eq_type' (A := v(1))
-        apply IsEqualType.univ_elim_eq
-        apply IsEqualTerm.weak_eq (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-        · aesop
-        · exact var_type_univ
-    · apply boundary_type_eq_type' (A := v(1))
-      apply IsEqualType.univ_elim_eq
-      apply IsEqualTerm.weak_eq (B := Πv(0);v(1)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-      · aesop
-      · refine IsType.univ_elim ?_
-        apply HasType.univ_pi
-        · aesop
-        · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-          · aesop
-          · aesop
-  apply HasType.pi_elim this
-  apply HasType.var
-  apply boundary_type_eq_type' (A := v(1))
-  apply IsEqualType.univ_elim_eq
-  apply IsEqualTerm.weak_eq (i := 0) (B := Πv(0);v(1)) (Γ := ε ⬝ 𝒰) (A := 𝒰)
-  · aesop
-  · refine IsType.univ_elim ?_
-    apply HasType.univ_pi
-    · aesop
-    · apply HasType.weak (B := v(0)) (Γ := ε ⬝ 𝒰) (i := 0) (A := 𝒰)
-      · aesop
-      · aesop
+example : ε ⊢ 𝟙 ≡ 𝟙 type := IsEqualType.unit_form_eq IsCtx.empty
+example : ε ⊢ 𝟙 ≡ 𝟙 type :=
+  IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq IsCtx.empty
 
--- redundancy of rules
-example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
-  IsEqualType.unit_form_eq hctx
-example (hctx : Γ ctx) : Γ ⊢ 𝟙 ≡ 𝟙 type :=
-  IsEqualType.univ_elim_eq <| IsEqualTerm.univ_unit_eq hctx
+ttheorem type_rfl : ε ⬝ (A : 𝒰) ⊢ A ≡ A type
+ttheorem elem_rlf : ε ⬝ (A : 𝒰) ⬝ (a : A) ⊢ a ≡ a : A
+
+ttheorem fun_ext : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (f : A → B) ⊢ λ(a : A). (f ◃ a) : A → B
+
+ttheorem subst_b : ε ⊢ ((λ (a : 𝟙). a))◃ ⋆ ≡ ⋆ : 𝟙
+ttheorem subst_b' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
+ttheorem subst_ : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
+ttheorem subst_b'' : ε ⊢ ((λ (A : 𝒰). A) ◃ 𝟙) ≡ 𝟙 : 𝒰
+
+example (h : Γ ⊢ (t⌈ₐa⌉₀).toTm ∶ T) :
+    (Γ ⊢ t.toTm⌈a.toTm⌉₀ ∶ T) := toTm_subst .. ▸ h
+
+ttheorem pi_type : ε ⬝ (s : 𝟙) ⊢ (λ(x : 𝟙). s) : 𝟙 → 𝟙
+
+ttheorem comp : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢
+  λ(g : B → C). λ(f : A → B). λ(x : A). g◃f◃x :
+    (B → C) → (A → B) → (A → C)
+
+ttheorem comp_applied : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⬝ (g' : B → C) ⬝ (f' : A → B) ⊢
+    ((λ(g : B → C) . (λ(f : A → B) . (λ(x : A) . g ◃ (f ◃ x)))) ◃ g')  ◃ f' : A → C
