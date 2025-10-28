@@ -44,19 +44,8 @@ theorem bridge : IsCtx ε := emptyctx
 
 ttheorem id_is_type : ε ⊢ type_id type
 
-instance : ToString (Except String (α)) where
-  toString e := match e with
-    | .error s => s
-    | .ok _ => "success"
-
-#eval normalize 50 [acx|ε] [atm|(λ (x : 𝟙). x )] [atm|𝟙→𝟙]
-#eval normalize 50 [acx|ε] [atm|((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆] [atm|𝟙]
-
 ttheorem typeid1 : ε ⊢ ret_id : type_id
 ttheorem typeid2 : ε ⊢ type_id ≡ Π(T : 𝒰;Π (x : T;T)) type
-ttheorem find_err : ε ⊢ λ(T' : 𝒰). T' ≡ (λ(T : 𝒰). T) : 𝒰 → 𝒰
-ttheorem find_err' : ε ⊢ 𝟙 ≡ (λ(T : 𝒰). T) ◃ 𝟙 : 𝒰
-ttheorem upsi : ε ⊢ ⋆ ≡ (λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙 ◃ ⋆ : 𝟙
 ttheorem typeid3 : ε ⊢ ret_id ≡ ret_id : type_id
 
 ttheorem univ_var_type : ε ⬝ (A : 𝒰) ⊢ A type
@@ -73,7 +62,7 @@ theorem univ_var_type'' :
 
 theorem univ_var_type_atm :
     IsType (ACtx.extend Lean.Name.anonymous ACtx.empty .univ).toCtx (ATm.var 0).toTm := by
-  exact ((is_type 4 _ _ _).toOption.get (by native_decide)).down
+  exact ((is_type 5 _ _ _).toOption.get (by native_decide)).down
 
 example : ε ⊢ 𝟙 ≡ 𝟙 type := IsEqualType.unit_form_eq IsCtx.empty
 example : ε ⊢ 𝟙 ≡ 𝟙 type :=
@@ -84,10 +73,10 @@ ttheorem elem_rlf : ε ⬝ (A : 𝒰) ⬝ (a : A) ⊢ a ≡ a : A
 
 ttheorem fun_ext : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (f : A → B) ⊢ λ(a : A). (f ◃ a) : A → B
 
-ttheorem subst_b : ε ⊢ ((λ (a : 𝟙). a))◃ ⋆ ≡ ⋆ : 𝟙
-ttheorem subst_b' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
-ttheorem subst_ : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
-ttheorem subst_b'' : ε ⊢ ((λ (A : 𝒰). A) ◃ 𝟙) ≡ 𝟙 : 𝒰
+ttheorem star_eq : ε ⊢ ((λ (a : 𝟙). a))◃ ⋆ ≡ ⋆ : 𝟙
+ttheorem star_eq' : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) ≡ ⋆ : 𝟙
+ttheorem star_ty : ε ⊢ (((λ (A : 𝒰). (λ (a : A). a)) ◃ 𝟙) ◃ ⋆) : 𝟙
+ttheorem unit_eq : ε ⊢ ((λ (A : 𝒰). A) ◃ 𝟙) ≡ 𝟙 : 𝒰
 
 example (h : Γ ⊢ (t⌈ₐa⌉₀).toTm ∶ T) :
     (Γ ⊢ t.toTm⌈a.toTm⌉₀ ∶ T) := toTm_subst .. ▸ h
@@ -98,5 +87,30 @@ ttheorem comp : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢
   λ(g : B → C). λ(f : A → B). λ(x : A). g◃f◃x :
     (B → C) → (A → B) → (A → C)
 
+/-- error: Type error: is_type: out of fuel -/
+#guard_msgs in
 ttheorem comp_applied : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⬝ (g' : B → C) ⬝ (f' : A → B) ⊢
     ((λ(g : B → C) . (λ(f : A → B) . (λ(x : A) . g ◃ (f ◃ x)))) ◃ g')  ◃ f' : A → C
+
+instance : ToString (Except String (α)) where
+  toString e := match e with
+    | .error s => s
+    | .ok _ => "success"
+
+#guard_msgs(drop info) in
+#eval normalize_type 50 [acx|ε] [atm|(Π(T:𝒰;T))]
+#guard_msgs(drop info) in
+#eval has_type 50 [acx|ε] [atm|(Π(T:𝒰;T))] [atm|𝒰] -- would prove unsoundness
+#guard_msgs(drop info) in
+#eval is_eq_type 30 [acx|ε] [atm|𝟙] [atm|(λ(T:𝒰).T) ◃ 𝟙]
+#guard_msgs(drop info) in
+#eval is_eq_type 50 [acx|ε] [atm|𝒰] [atm|𝒰]
+#guard_msgs(drop info) in
+#eval normalize 50 [acx|ε] [atm|(λ(T:𝒰). T) ◃ 𝟙] [atm| 𝒰]
+#guard_msgs(drop info) in
+#eval normalize 50 [acx|ε] [atm|(λ (x : 𝟙). x )] [atm|𝟙→𝟙]
+#guard_msgs(drop info) in
+#eval normalize 50 [acx|ε] [atm|((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆] [atm|𝟙]
+
+ttheorem use_normalize : ε ⊢ ⋆ ≡ ((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆ : 𝟙
+ttheorem use_normalize_type : ε ⊢ (λ(T:𝒰). T) ◃ 𝟙 ≡ (λ(U:𝒰). (λ(T:𝒰). T) ◃ 𝟙) ◃ 𝟙 type
