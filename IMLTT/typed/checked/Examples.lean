@@ -44,8 +44,19 @@ theorem bridge : IsCtx ε := emptyctx
 
 ttheorem id_is_type : ε ⊢ type_id type
 
+instance : ToString (Except String (α)) where
+  toString e := match e with
+    | .error s => s
+    | .ok _ => "success"
+
+#eval normalize 50 [acx|ε] [atm|(λ (x : 𝟙). x )] [atm|𝟙→𝟙]
+#eval normalize 50 [acx|ε] [atm|((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆] [atm|𝟙]
+
 ttheorem typeid1 : ε ⊢ ret_id : type_id
 ttheorem typeid2 : ε ⊢ type_id ≡ Π(T : 𝒰;Π (x : T;T)) type
+ttheorem find_err : ε ⊢ λ(T' : 𝒰). T' ≡ (λ(T : 𝒰). T) : 𝒰 → 𝒰
+ttheorem find_err' : ε ⊢ 𝟙 ≡ (λ(T : 𝒰). T) ◃ 𝟙 : 𝒰
+ttheorem upsi : ε ⊢ ⋆ ≡ (λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙 ◃ ⋆ : 𝟙
 ttheorem typeid3 : ε ⊢ ret_id ≡ ret_id : type_id
 
 ttheorem univ_var_type : ε ⬝ (A : 𝒰) ⊢ A type
