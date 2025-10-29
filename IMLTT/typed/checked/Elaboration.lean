@@ -194,31 +194,36 @@ def test_tiet' := [tiet| ε ⬝ (n : 𝒩) ⊢ n ≡ n : 𝒩]
 
 macro "ttheorem " id:ident " : " cx:actx "ctx" : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsCtx"
-  `(def $var_ident:ident := [tcx| $cx]
+  `(@[reducible]
+    def $var_ident:ident := [tcx| $cx]
     #guard_msgs(drop error) in
     theorem $id : ($var_ident).Γ ctx := ($var_ident).isCtx)
 
 macro "ttheorem " id:ident " : " cx:actx "⊢" T:atm "type" : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsType"
-  `(def $var_ident:ident := [tit| $cx ⊢ $T type]
+  `(@[reducible]
+    def $var_ident:ident := [tit| $cx ⊢ $T type]
     #guard_msgs(drop error) in
     theorem $id : ($var_ident).Γ ⊢ ($var_ident).T type := ($var_ident).isType)
 
 macro "ttheorem " id:ident " : " cx:actx "⊢" t:atm ":" T:atm : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstHasType"
-  `(def $var_ident:ident := [tht| $cx ⊢ $t : $T]
+  `(@[reducible]
+    def $var_ident:ident := [tht| $cx ⊢ $t : $T]
     #guard_msgs(drop error) in
     theorem $id : ($var_ident).Γ ⊢ ($var_ident).t ∶ ($var_ident).T := ($var_ident).hasType)
 
 macro "ttheorem " id:ident " : " cx:actx "⊢" T:atm "≡" T':atm "type" : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualType"
-  `(def $var_ident:ident := [tieT| $cx ⊢ $T ≡ $T' type]
+  `(@[reducible]
+    def $var_ident:ident := [tieT| $cx ⊢ $T ≡ $T' type]
     #guard_msgs(drop error) in
     theorem $id : ($var_ident).Γ ⊢ ($var_ident).T ≡ ($var_ident).T' type := ($var_ident).isEqualType)
 
 macro "ttheorem " id:ident " : " cx:actx "⊢" t:atm "≡" t':atm ":" T:atm : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualTerm"
-  `(def $var_ident:ident := [tiet| $cx ⊢ $t ≡ $t' : $T]
+  `(@[reducible]
+    def $var_ident:ident := [tiet| $cx ⊢ $t ≡ $t' : $T]
     #guard_msgs(drop error) in
     theorem $id : ($var_ident).Γ ⊢
       ($var_ident).t ≡ ($var_ident).t' ∶ ($var_ident).T := ($var_ident).isEqualTerm)

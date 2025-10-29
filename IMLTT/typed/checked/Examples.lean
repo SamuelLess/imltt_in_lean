@@ -87,6 +87,11 @@ ttheorem comp : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢
   λ(g : B → C). λ(f : A → B). λ(x : A). g◃f◃x :
     (B → C) → (A → B) → (A → C)
 
+theorem comp_tm : ε ⬝ 𝒰 ⬝ 𝒰 ⬝ 𝒰 ⊢ λΠv(1);v(1);λΠv(3);v(3);λv(4);v(2)◃(v(1)◃v(0)) ∶
+  ΠΠv(1);v(1);ΠΠv(3);v(3);Πv(4);v(3) := by
+  have := comp
+  simp_all [ATm.toTm, ACtx.toCtx]
+
 /-- error: Type error: is_type: out of fuel -/
 #guard_msgs in
 ttheorem comp_applied : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⬝ (g' : B → C) ⬝ (f' : A → B) ⊢
@@ -114,3 +119,16 @@ instance : ToString (Except String (α)) where
 
 ttheorem use_normalize : ε ⊢ ⋆ ≡ ((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆ : 𝟙
 ttheorem use_normalize_type : ε ⊢ (λ(T:𝒰). T) ◃ 𝟙 ≡ (λ(U:𝒰). (λ(T:𝒰). T) ◃ 𝟙) ◃ 𝟙 type
+
+example : (Γ ctx) -> Γ ⊢ (λ𝒩;v(0)) ◃ 𝓏 ∶ 𝒩 := by
+  intro hΓctx
+  have : Γ ⊢ λ𝒩;v(0) ∶ Π𝒩;𝒩 := by
+    apply HasType.pi_intro
+    apply HasType.var
+    apply IsType.nat_form
+    exact hΓctx
+  apply HasType.pi_elim this
+  exact HasType.nat_zero_intro hΓctx
+
+ttheorem lam_nat_app_zero_nat : ε ⊢ (λ(n : 𝒩). n) ◃ 𝓏 : 𝒩
+example : (Γ ctx) -> Γ ⊢ (λ𝒩;v(0)) ◃ 𝓏 ∶ 𝒩 := intro_ctx lam_nat_app_zero_nat
