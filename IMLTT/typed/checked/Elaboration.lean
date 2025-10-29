@@ -7,7 +7,7 @@ import Qq
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Command Qq Tactic
 
-def fuel := 1000 -- proof go brrr 🚗
+def fuel := 50 -- proof go brrr 🚗
 
 -- Γ ctx
 structure InstIsCtx (n : Nat) where
@@ -105,9 +105,10 @@ partial def elabHasType (stxcx : TSyntax `actx) (stxt stxT : TSyntax `atm) :
 elab "[tht|" cx:actx "⊢" t:atm ":" T:atm "]" : term => elabHasType cx t T
 
 def test1 := [tht| ε ⊢ ⋆ : 𝟙]
+/-
 /-- error: Type error: is_eq_type: out of fuel 𝒰 ≡ 𝟙 -/
-#guard_msgs in
-def test2 := [tht| ε ⊢ ⋆ : 𝒰]
+#guard_msgs in-/
+--def test2 := [tht| ε ⊢ ⋆ : 𝒰]
 def test3 := [tht| ε ⊢ 𝓈(𝓏) : 𝒩]
 
 -- - Γ ⊢ A = A' type

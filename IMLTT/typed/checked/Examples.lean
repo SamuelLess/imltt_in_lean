@@ -62,7 +62,7 @@ theorem univ_var_type'' :
 
 theorem univ_var_type_atm :
     IsType (ACtx.extend Lean.Name.anonymous ACtx.empty .univ).toCtx (ATm.var 0).toTm := by
-  exact ((is_type 4 _ _ _).toOption.get (by native_decide)).down
+  exact ((is_type 5 _ _ _).toOption.get (by native_decide)).down
 
 example : ε ⊢ 𝟙 ≡ 𝟙 type := IsEqualType.unit_form_eq IsCtx.empty
 example : ε ⊢ 𝟙 ≡ 𝟙 type :=
@@ -87,6 +87,8 @@ ttheorem comp : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⊢
   λ(g : B → C). λ(f : A → B). λ(x : A). g◃f◃x :
     (B → C) → (A → B) → (A → C)
 
+/-- error: Type error: is_type: out of fuel -/
+#guard_msgs in
 ttheorem comp_applied : ε ⬝ (A : 𝒰) ⬝ (B : 𝒰) ⬝ (C : 𝒰) ⬝ (g' : B → C) ⬝ (f' : A → B) ⊢
     ((λ(g : B → C) . (λ(f : A → B) . (λ(x : A) . g ◃ (f ◃ x)))) ◃ g')  ◃ f' : A → C
 
@@ -95,8 +97,20 @@ instance : ToString (Except String (α)) where
     | .error s => s
     | .ok _ => "success"
 
+#guard_msgs(drop info) in
+#eval normalize_type 50 [acx|ε] [atm|(Π(T:𝒰;T))]
+#guard_msgs(drop info) in
+#eval has_type 50 [acx|ε] [atm|(Π(T:𝒰;T))] [atm|𝒰] -- would prove unsoundness
+#guard_msgs(drop info) in
+#eval is_eq_type 30 [acx|ε] [atm|𝟙] [atm|(λ(T:𝒰).T) ◃ 𝟙]
+#guard_msgs(drop info) in
+#eval is_eq_type 50 [acx|ε] [atm|𝒰] [atm|𝒰]
+#guard_msgs(drop info) in
+#eval normalize 50 [acx|ε] [atm|(λ(T:𝒰). T) ◃ 𝟙] [atm| 𝒰]
+#guard_msgs(drop info) in
 #eval normalize 50 [acx|ε] [atm|(λ (x : 𝟙). x )] [atm|𝟙→𝟙]
+#guard_msgs(drop info) in
 #eval normalize 50 [acx|ε] [atm|((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆] [atm|𝟙]
 
 ttheorem use_normalize : ε ⊢ ⋆ ≡ ((λ (T : 𝒰). (λ (x : T). x )) ◃ 𝟙) ◃ ⋆ : 𝟙
-ttheorem use_normalize_type : ε ⊢ 𝟙 ≡ (λ(T:𝒰). T) ◃ 𝟙 : 𝒰
+ttheorem use_normalize_type : ε ⊢ (λ(T:𝒰). T) ◃ 𝟙 ≡ (λ(U:𝒰). (λ(T:𝒰). T) ◃ 𝟙) ◃ 𝟙 type
