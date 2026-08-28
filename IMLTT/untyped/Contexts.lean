@@ -132,7 +132,7 @@ def get_sub_context (Γ : Ctx n) (l : Nat) (leq : l ≤ n) : Ctx l :=
       have h : l = n' + 1 := by omega
       h ▸ Γ
 
-def helper_get_type_context : n ≤ 0 → ¬(n = 0) → False := by omega
+theorem helper_get_type_context : n ≤ 0 → ¬(n = 0) → False := by omega
 
 def remove_from_ctx (leq : l ≤ n) (Γ : Ctx (n + 1)) (s : Tm l) : Ctx n :=
   match Γ with
@@ -145,6 +145,7 @@ def remove_from_ctx (leq : l ≤ n) (Γ : Ctx (n + 1)) (s : Tm l) : Ctx n :=
         False.elim (helper_get_type_context leq h1)
       | .succ n' =>
         (remove_from_ctx (leq := by omega) Γ' s) ⬝ (T⌈n_substitution (leq := by omega) s⌉)
+  termination_by n
 
 def get_from_context (Γ : Ctx (n + 1)) (l : Nat) (leq : l ≤ n) : Tm l :=
   match Γ with

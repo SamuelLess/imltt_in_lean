@@ -391,7 +391,7 @@ theorem substitution_refl : (.refl A a)⌈σ⌉ = .refl (A⌈σ⌉) (a⌈σ⌉) 
     simp [substitute]
 
 theorem lift_n_substitution {n : Nat} {leq : l ≤ n} {s : Tm l} :
-    ⇑ₛ(s/ₙleq) = s/ₙ(Nat.le_step leq) :=
+    ⇑ₛ(s/ₙleq) = s/ₙ(Nat.le_succ_of_le leq) :=
   by
     simp [n_substitution]
     omega
@@ -425,7 +425,7 @@ theorem substitution_id_shift_var :
     aesop
 
 theorem lift_n_substitution_shift {n : Nat} {leq : l ≤ n} {s : Tm l} :
-    ⇑ₛ(s↑/ₙleq) = s↑/ₙ(Nat.le_step leq) :=
+    ⇑ₛ(s↑/ₙleq) = s↑/ₙ(Nat.le_succ_of_le leq) :=
   by
     simp [n_substitution_shift]
     omega
