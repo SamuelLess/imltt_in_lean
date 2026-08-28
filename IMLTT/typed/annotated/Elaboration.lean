@@ -23,16 +23,25 @@ def getFinIdx? (cx : ElabCtx) (name : Name) : Option ((n : Nat) × (Fin n)) :=
 def toStr (cx : ElabCtx) : String := if cx.isEmpty then "ε" else
   String.intercalate ", " (cx.map toString)
 
-def weakenCtx : {m : Nat} → (cx : ElabCtx) → (ρ : Weak m cx.length) → ElabCtx
-  | _, cx, .id => cx
-  | _, cx, .shift ρ' => Name.anonymous :: (weakenCtx cx ρ')
-  | _, name :: rest, .lift ρ' => name :: (weakenCtx rest ρ')
+def weakenCtx' : {m n : Nat} → (cx : List Name) → cx.length = n → (ρ : Weak m n) → ElabCtx
+  | _, _, cx, _, .id => cx
+  | _, _, cx, h, .shift ρ' => Name.anonymous :: (weakenCtx' cx h ρ')
+  | _, _, name :: rest, h, .lift ρ' => name :: (weakenCtx' rest (by simpa using h) ρ')
+  | _, _, [], h, .lift _ => by simp at h
 
-def substituteCtx : {m : Nat} → (cx : ElabCtx) → (ρ : ASubst m cx.length) → ElabCtx
-  | _, cx, .weak ρ' => weakenCtx cx ρ'
-  | _, cx, .shift ρ' => Name.anonymous :: (substituteCtx cx ρ')
-  | _, name :: rest, .lift ρ' => name :: (substituteCtx rest ρ')
-  | _, _ :: rest, .extend ρ' _ => substituteCtx rest ρ'
+def weakenCtx {m : Nat} (cx : ElabCtx) (ρ : Weak m (List.length cx)) : ElabCtx :=
+  weakenCtx' cx rfl ρ
+
+def substituteCtx' : {m n : Nat} → (cx : List Name) → cx.length = n → (ρ : ASubst m n) → ElabCtx
+  | _, _, cx, h, .weak ρ' => weakenCtx' cx h ρ'
+  | _, _, cx, h, .shift ρ' => Name.anonymous :: (substituteCtx' cx h ρ')
+  | _, _, name :: rest, h, .lift ρ' => name :: (substituteCtx' rest (by simpa using h) ρ')
+  | _, _, [], h, .lift _ => by simp at h
+  | _, _, _ :: rest, h, .extend ρ' _ => substituteCtx' rest (by simpa using h) ρ'
+  | _, _, [], h, .extend _ _ => by simp at h
+
+def substituteCtx {m : Nat} (cx : ElabCtx) (ρ : ASubst m (List.length cx)) : ElabCtx :=
+  substituteCtx' cx rfl ρ
 
 end ElabCtx
 

@@ -755,13 +755,13 @@ mutual
   termination_by structural fuel
 
   def normalize_type (fuel : Nat) (Γ : ACtx n) (T : ATm n) :
-      Except String (Σ' T' : ATm n, Γ.toCtx ⊢ T.toTm ≡ T'.toTm type) := do
-    match fuel, Γ, T with
-    | 0, Γ, T => .error s!"normalize_type: out of fuel with {Γ} ⊢ nf({T.toTm})"
-    | f+1, Γ, .univ => do
+      Except String (Σ' T' : ATm n, Γ.toCtx ⊢ T.toTm ≡ T'.toTm type) :=
+    match fuel, T with
+    | 0, T => .error s!"normalize_type: out of fuel with {Γ} ⊢ nf({T.toTm})"
+    | f+1, .univ => do
       let ctx_ok ← is_ctx (is_type f) Γ
       return ⟨.univ, IsEqualType.univ_form_eq ctx_ok.down⟩
-    | f+1, Γ, .pi A B => do
+    | f+1, .pi A B => do
       let ⟨A', A'_eq⟩ ← normalize_type f Γ A
       let ⟨B', B'_eq⟩ ← normalize_type f (Γ ⬝a A) B
       have : Γ.toCtx ⊢ (.pi A.toTm B.toTm) ≡ (.pi A'.toTm B'.toTm) type := by
@@ -770,15 +770,15 @@ mutual
         · exact B'_eq
       return ⟨.pi A' B', this⟩
     -- TODO: add missing cases
-    | f+1, Γ, T => do
+    | f+1, T => do
       let is_type_T ← is_type f _ Γ T
       return ⟨T, defeq_refl_type is_type_T.down⟩
 
   def normalize (fuel : Nat) (Γ : ACtx n) (t : ATm n) (T : ATm n) :
-      Except String (Σ' t' : ATm n, Γ.toCtx ⊢ t.toTm ≡ t'.toTm ∶ T.toTm) := do
-    match fuel, Γ, t with
-    | 0, _, _ => .error "normalize: out of fuel"
-    | f+1, Γ, .app func a => do
+      Except String (Σ' t' : ATm n, Γ.toCtx ⊢ t.toTm ≡ t'.toTm ∶ T.toTm) :=
+    match fuel, t with
+    | 0, _ => .error "normalize: out of fuel"
+    | f+1, .app func a => do
       let ⟨.pi A B, hP⟩ ← infer_type f Γ func
         | .error s!"normalize: could not infer type of {t.toTm}"
       let ⟨.lam A' t', func'_eq⟩ ← normalize f Γ func (.pi A B)
@@ -812,7 +812,7 @@ mutual
             · exact (← has_type f Γ a' A').down
         · exact (toTm_subst ..) ▸ is_eq_type_T.down
       return ⟨t'⌈ₐa'⌉₀, this⟩
-    | f+1, Γ, .lam A b => do
+    | f+1, .lam A b => do
       let ⟨.pi A_alt B, hP⟩ ← infer_type f Γ (.lam A b)
         | .error s!"normalize: could not infer type of {t.toTm}"
       let is_eq_type_T ← is_eq_type f Γ (.pi A B) T
@@ -828,7 +828,7 @@ mutual
         · exact is_eq_type_T.down
       return ⟨.lam A' b', this⟩
     -- TODO: add missing cases
-    | f+1, Γ, t => do
+    | f+1, t => do
       let has_type_T ← has_type f Γ t T
       return ⟨t, defeq_refl_term has_type_T.down⟩
   termination_by structural fuel

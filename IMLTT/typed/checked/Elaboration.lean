@@ -192,38 +192,41 @@ elab "[tiet|" cx:actx "⊢" t:atm "≡" t':atm ":" T:atm "]" : term => elabIsEqu
 def test_tiet := [tiet| ε ⊢ ⋆ ≡ ⋆ : 𝟙]
 def test_tiet' := [tiet| ε ⬝ (n : 𝒩) ⊢ n ≡ n : 𝒩]
 
-macro "ttheorem " id:ident " : " cx:actx "ctx" : command => do
+/-- Elaborate the instance `def`; only elaborate the `theorem` if the `def`
+succeeded, so a type error surfaces once instead of causing cascade errors. -/
+def elabTTheoremCmds (defCmd thmCmd : TSyntax `command) : CommandElabM Unit := do
+  let hadErrors := (← get).messages.hasErrors
+  elabCommand defCmd
+  if hadErrors || !(← get).messages.hasErrors then
+    elabCommand thmCmd
+
+elab "ttheorem " id:ident " : " cx:actx "ctx" : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsCtx"
-  `(@[reducible]
-    def $var_ident:ident := [tcx| $cx]
-    #guard_msgs(drop error) in
-    theorem $id : ($var_ident).Γ ctx := ($var_ident).isCtx)
+  elabTTheoremCmds
+    (← `(@[reducible] def $var_ident:ident := [tcx| $cx]))
+    (← `(theorem $id : ($var_ident).Γ ctx := ($var_ident).isCtx))
 
-macro "ttheorem " id:ident " : " cx:actx "⊢" T:atm "type" : command => do
+elab "ttheorem " id:ident " : " cx:actx "⊢" T:atm "type" : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsType"
-  `(@[reducible]
-    def $var_ident:ident := [tit| $cx ⊢ $T type]
-    #guard_msgs(drop error) in
-    theorem $id : ($var_ident).Γ ⊢ ($var_ident).T type := ($var_ident).isType)
+  elabTTheoremCmds
+    (← `(@[reducible] def $var_ident:ident := [tit| $cx ⊢ $T type]))
+    (← `(theorem $id : ($var_ident).Γ ⊢ ($var_ident).T type := ($var_ident).isType))
 
-macro "ttheorem " id:ident " : " cx:actx "⊢" t:atm ":" T:atm : command => do
+elab "ttheorem " id:ident " : " cx:actx "⊢" t:atm ":" T:atm : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstHasType"
-  `(@[reducible]
-    def $var_ident:ident := [tht| $cx ⊢ $t : $T]
-    #guard_msgs(drop error) in
-    theorem $id : ($var_ident).Γ ⊢ ($var_ident).t ∶ ($var_ident).T := ($var_ident).hasType)
+  elabTTheoremCmds
+    (← `(@[reducible] def $var_ident:ident := [tht| $cx ⊢ $t : $T]))
+    (← `(theorem $id : ($var_ident).Γ ⊢ ($var_ident).t ∶ ($var_ident).T := ($var_ident).hasType))
 
-macro "ttheorem " id:ident " : " cx:actx "⊢" T:atm "≡" T':atm "type" : command => do
+elab "ttheorem " id:ident " : " cx:actx "⊢" T:atm "≡" T':atm "type" : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualType"
-  `(@[reducible]
-    def $var_ident:ident := [tieT| $cx ⊢ $T ≡ $T' type]
-    #guard_msgs(drop error) in
-    theorem $id : ($var_ident).Γ ⊢ ($var_ident).T ≡ ($var_ident).T' type := ($var_ident).isEqualType)
+  elabTTheoremCmds
+    (← `(@[reducible] def $var_ident:ident := [tieT| $cx ⊢ $T ≡ $T' type]))
+    (← `(theorem $id : ($var_ident).Γ ⊢ ($var_ident).T ≡ ($var_ident).T' type := ($var_ident).isEqualType))
 
-macro "ttheorem " id:ident " : " cx:actx "⊢" t:atm "≡" t':atm ":" T:atm : command => do
+elab "ttheorem " id:ident " : " cx:actx "⊢" t:atm "≡" t':atm ":" T:atm : command => do
   let var_ident := mkIdent <| Name.str id.getId "_InstIsEqualTerm"
-  `(@[reducible]
-    def $var_ident:ident := [tiet| $cx ⊢ $t ≡ $t' : $T]
-    #guard_msgs(drop error) in
-    theorem $id : ($var_ident).Γ ⊢
-      ($var_ident).t ≡ ($var_ident).t' ∶ ($var_ident).T := ($var_ident).isEqualTerm)
+  elabTTheoremCmds
+    (← `(@[reducible] def $var_ident:ident := [tiet| $cx ⊢ $t ≡ $t' : $T]))
+    (← `(theorem $id : ($var_ident).Γ ⊢
+      ($var_ident).t ≡ ($var_ident).t' ∶ ($var_ident).T := ($var_ident).isEqualTerm))
